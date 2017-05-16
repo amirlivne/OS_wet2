@@ -40,12 +40,12 @@ int main(int argc, char *argv[]) {
 	
 	//need to add a log file // bug 
 
-	//needs to create threads that will activate ATM's function.
+	//needs to create threads that will activate ATM's function. //bug
 	int rv;
-	pthread_t ATM_threads = new pthread_t[ATM_num];
+	pthread_t* ATM_threads = new pthread_t[ATM_num]; //initilize N threads variables.
 	for (int i = 0; i < ATM_num; i++)
 	{
-		rv = pthread_create(ATM_threads[i], NULL, FUNCTION, argv[i + 2]);
+		rv = pthread_create(&ATM_threads[i], NULL, !!! ATM_FUNCTION!!!, argv[i + 2]);
 	}
 
 
