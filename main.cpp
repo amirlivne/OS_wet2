@@ -1,7 +1,6 @@
 #include <pthread.h>
 #include <mutex>
 #include <iostream>
-#include <string>
 #include <stdlib.h>
 #include <fstream>
 
@@ -13,6 +12,11 @@ typedef struct ATM_ {
 	int id;
 	char* input_file; 
 } ATM, *pATM;
+
+void* activateATM(void* pATM)
+{
+	return;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -45,9 +49,10 @@ int main(int argc, char *argv[]) {
 	pthread_t* ATM_threads = new pthread_t[ATM_num]; //initilize N threads variables.
 	for (int i = 0; i < ATM_num; i++)
 	{
-		rv = pthread_create(&ATM_threads[i], NULL, !!! ATM_FUNCTION!!!, argv[i + 2]);
+		rv = pthread_create(&ATM_threads[i], NULL, activateATM, argv[i + 2]);
 	}
-
-
+	
+	// create thread to get commision for the bank each 3 sec.
+	// create thread to print the bank status each 0.5 sec.
 
 }
