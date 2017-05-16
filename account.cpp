@@ -46,21 +46,19 @@ int account::updateBalance(int amount) {
 int account::getBalance() {
 		//lock the reader mutex
 	read_counter_mutex.lock();
-	if (!readers_counter) //if this is the first reader, lock the writing mutex
+	if (!readers_counter++) //if this is the first reader, lock the writing mutex
 	{
 		write_mutex.lock();
 	}
-	readers_counter++;
 	read_counter_mutex.unlock(); //free the reading mutex
 		//READ!
 	int result = balance_; 
 		//lock the reader mutex
 	read_counter_mutex.lock(); 
-	if (readers_counter) //if this is the last reader = unlock the writing mutex
+	if (readers_counter--) //if this is the last reader = unlock the writing mutex
 	{
 		write_mutex.unlock();
 	}
-	readers_counter--;
 	read_counter_mutex.unlock(); //free the reading mutex
 	return result;
 }

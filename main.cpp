@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <fstream>
+#include <sstream>
 
 
 using namespace std;
@@ -14,8 +15,43 @@ typedef struct ATM_ {
 	string input_file; 
 } ATM, *pATM;
 
-void* activateATM(void* pATM)
+void* activateATM(void* patm)
 {
+	pATM curr_ATM = pATM(patm);
+	string line;
+	fstream file(curr_ATM->input_file);
+	while (getline(file, line))
+	{
+		istringstream iss(line);
+		char cmd;
+		int account, password;
+		iss >> cmd;
+		iss >> account;
+		iss >> password;
+		switch (cmd)
+		{
+			case 'O':
+				cout << "perform add acount" << endl;
+				break;
+			case 'D':
+				cout << "perform deposit acount" << endl;
+				break;
+			case 'W':
+				cout << "perform withrawl acount" << endl;
+				break;
+			case 'B':
+				cout << "perform balance enquiry acount" << endl;
+				break;
+			case 'Q':
+				cout << "perform erase acount" << endl;
+				break;
+			case 'T':
+				cout << "perform teransit acount" << endl;
+				break;
+		}
+
+		
+	}
 	void* res;
 	return res;
 }
