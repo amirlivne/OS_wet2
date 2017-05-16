@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string>
+#include <mutex>
+
 
 typedef enum result_ {PASS_ERR, BALANCE_ERR , SUCCESS} result;
 
@@ -7,17 +9,18 @@ using namespace std;
 
 class account
 {
-	
-	int account_id;
-	int balance;
-	string password;
+private:
+	int account_id_;
+	int balance_;
+	int password_;
+	unsigned int readers_counter;
+	mutex write_mutex;
+	mutex read_counter_mutex;
 public:
-	account(int id, string pass, int init_balance) : account_id(id), password(pass), balance(init_balance) {};
-	~account();
-	string getPassword();
-	int deposite(double amount);
-	int withdrawal(double amount);
+	account(int id, int pass, int init_balance) : account_id_(id), password_(pass), balance_(init_balance), readers_counter(0){};
+	int getPassword() const;
+	int getID() const;
+	int updateBalance(int amount);
 	int getBalance();
-	
-	
+
 };
