@@ -1,22 +1,23 @@
 #include <stdlib.h>
 #include <string>
 
-enum result {PASS_ERR, BALANCE_ERR , SUCCESS};
+typedef enum result_ {PASS_ERR, BALANCE_ERR , SUCCESS} result;
 
 using namespace std;
 
-class account {
-private:
+class account
+{
+	
 	int account_id;
-	double balance;
+	int balance;
 	string password;
 public:
-	account(int id, string pass, double init_balance) : account_id(id), password(pass), balance(init_balance) {}
+	account(int id, string pass, int init_balance) : account_id(id), password(pass), balance(init_balance) {};
 	~account();
 	string getPassword();
-	double deposite(double amount);
-	double withdrawal(double amount);
-	double getBalance();
+	int deposite(double amount);
+	int withdrawal(double amount);
+	int getBalance();
 	
 	
-}
+};

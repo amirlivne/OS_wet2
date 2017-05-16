@@ -1,3 +1,4 @@
+#define HAVE_STRUCT_TIMESPEC
 #include <pthread.h>
 #include <mutex>
 #include <iostream>
@@ -10,12 +11,13 @@ using namespace std;
 
 typedef struct ATM_ {
 	int id;
-	char* input_file; 
+	string input_file; 
 } ATM, *pATM;
 
 void* activateATM(void* pATM)
 {
-	return;
+	void* res;
+	return res;
 }
 
 int main(int argc, char *argv[]) {
@@ -44,12 +46,19 @@ int main(int argc, char *argv[]) {
 	
 	//need to add a log file // bug 
 
+	pATM ATMs = new ATM[ATM_num];
+	for (int i = 0; i < ATM_num; i++)
+	{
+		ATMs[i].id = i + 1;
+		ATMs[i].input_file = argv[i + 2];
+	}
+
 	//needs to create threads that will activate ATM's function. //bug
 	int rv;
 	pthread_t* ATM_threads = new pthread_t[ATM_num]; //initilize N threads variables.
 	for (int i = 0; i < ATM_num; i++)
 	{
-		rv = pthread_create(&ATM_threads[i], NULL, activateATM, argv[i + 2]);
+		rv = pthread_create(&ATM_threads[i], NULL, activateATM, &ATMs[i]);
 	}
 	
 	// create thread to get commision for the bank each 3 sec.
