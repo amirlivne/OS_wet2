@@ -10,9 +10,9 @@ using namespace std;
 class account
 {
 private:
-	int account_id_;
+	const int account_id_;
 	int balance_;
-	int password_;
+	const int password_;
 	unsigned int readers_counter;
 	mutex write_mutex;
 	mutex read_counter_mutex;
