@@ -52,6 +52,7 @@ int account::getID() const {
 //***********************************************
 int account::updateBalance(int amount) {
 	pthread_mutex_lock(&write_mutex_);
+	sleep(1);
 	balance_ += amount;
 	int result = balance_;
 	pthread_mutex_unlock(&write_mutex_);
@@ -74,6 +75,7 @@ int account::getBalance() {
 	pthread_mutex_unlock(&read_counter_mutex_); //unlock reader counter to allow multiple readers
 	//READ!
 	int result = balance_; 
+	sleep(1);
 		//lock the reader mutex
 	pthread_mutex_lock(&read_counter_mutex_);
 	if (readers_counter_--) //if this is the last reader = unlock the writing mutex
