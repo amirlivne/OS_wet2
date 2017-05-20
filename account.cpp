@@ -3,6 +3,27 @@
 
 using namespace std;
 
+
+//********************************************
+// function name: account
+// Description: account class constractor
+// Parameters: 3 ints - id, password and balance
+// Returns: NONE
+//***********************************************
+account::account(int id, int pass, int init_balance) : account_id_(id), password_(pass), balance_(init_balance), readers_counter_(0)
+{
+	//initilizing the readers-writers mutexes:
+	pthread_mutex_init(&write_mutex_, NULL);
+	pthread_mutex_init(&read_counter_mutex_, NULL);
+}
+
+account::~account()
+{
+	//destroying the readers-writers mutexes:
+	pthread_mutex_destroy(&write_mutex_);
+	pthread_mutex_destroy(&read_counter_mutex_);
+}
+
 //********************************************
 // function name: getPassword
 // Description: returns the current password of an account
@@ -30,10 +51,10 @@ int account::getID() const {
 // Returns: an integer - amount of money to add
 //***********************************************
 int account::updateBalance(int amount) {
-	write_mutex.lock();
+	pthread_mutex_lock(&write_mutex_);
 	balance_ += amount;
 	int result = balance_;
-	write_mutex.unlock();
+	pthread_mutex_unlock(&write_mutex_);
 	return result;
 }
 
@@ -45,20 +66,20 @@ int account::updateBalance(int amount) {
 //***********************************************
 int account::getBalance() {
 		//lock the reader mutex
-	read_counter_mutex.lock();
-	if (!readers_counter++) //if this is the first reader, lock the writing mutex
+	pthread_mutex_lock(&read_counter_mutex_);
+	if (!readers_counter_++) //if this is the first reader, lock the writing mutex
 	{
-		write_mutex.lock();
+		pthread_mutex_lock(&write_mutex_);
 	}
-	read_counter_mutex.unlock(); //free the reading mutex
-		//READ!
+	pthread_mutex_unlock(&read_counter_mutex_); //unlock reader counter to allow multiple readers
+	//READ!
 	int result = balance_; 
 		//lock the reader mutex
-	read_counter_mutex.lock(); 
-	if (readers_counter--) //if this is the last reader = unlock the writing mutex
+	pthread_mutex_lock(&read_counter_mutex_);
+	if (readers_counter_--) //if this is the last reader = unlock the writing mutex
 	{
-		write_mutex.unlock();
+		pthread_mutex_unlock(&write_mutex_);
 	}
-	read_counter_mutex.unlock(); //free the reading mutex
+	pthread_mutex_unlock(&read_counter_mutex_);
 	return result;
 }
