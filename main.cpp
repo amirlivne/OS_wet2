@@ -71,7 +71,7 @@ void* activateATM(void* patm)
 			break;
 		default: //if the actions is not recognized;
 			pthread_mutex_lock(&log_file_mutex);
-			cout << "Error <" << curr_ATM->id << ">: illigeal action" << endl;
+			Log_file << "Error <" << curr_ATM->id << ">: illigeal action" << endl;
 			pthread_mutex_unlock(&log_file_mutex);
 			break;
 		}
