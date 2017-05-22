@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 	//initilizng print thread;
 	pthread_t print_bank_thread;
 	bool prog_running_flag = true; //a flag to the the print thread when to stop running
-	rv = pthread_create(&commision_thread, NULL, print_bank_func, NULL);
+	rv = pthread_create(&print_bank_thread, NULL, print_bank_func, NULL);
 	if (rv)
 	{
 		cout << "Error in creating Print Bank thread" << endl;
@@ -194,13 +194,19 @@ int main(int argc, char *argv[]) {
 	//joining commision thread
 	ATMs_active_flag = false;
 	rv = pthread_join(commision_thread, NULL);
-	cout << "Error in joining Commision thread" << endl;
+	if (rv)
+	{
+		cout << "Error in joining Commision thread" << endl;
+	}
 
 	//joining print bank thread
 	prog_running_flag = false;
 	rv = pthread_join(print_bank_thread, NULL);
-	cout << "Error in joining Print Bank thread" << endl;
-	
+	if (rv)
+	{
+		cout << "Error in joining Print Bank thread" << endl;
+	}
+
 	//destroying log file mutex and closing the log file
 	Log_file.close();
 	pthread_mutex_destroy(&log_file_mutex);
