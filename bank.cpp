@@ -7,6 +7,10 @@
 #define BALANCE_NOT_SUFFICIENT "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " balance is lower than " << amount << endl;
 #define WITHDRAWAL_SUCCEEDED ATM_ID << ": Account " << account_id << " new balance is " << rv << " after " << amount << " $ was withdrew" << endl
 #define CURRENT_BALANCE ATM_ID << ": Account " << account_id << " balance is " << curr_balance
+#define DEPOSIT_SUCCEEDED ATM_ID << ": Account id " << account_id << " new balance is " << new_balance << "after " << amount << "$ was deposited" << endl
+#define ACCOUNT_ALREADY_EXISTS "Error " << ATM_ID << ": Your transaction failed – account with the same id exists" << endl
+#define OPEN_ACCOUNT_SUCCEEDED ATM_ID << ": New account id is " << account_id << " with password " << password << " and initial balance " << init_balance << endl
+
 
 using namespace std;
 
@@ -60,6 +64,12 @@ void bank::readerLeave()
 	pthread_mutex_unlock(&mutex_accountsDB_write);
 }
 
+//********************************************
+// function name: ~bank
+// Description: constructor
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
 bank::bank()
 {
 	bank_money_ = 0;
@@ -71,6 +81,12 @@ bank::bank()
 	pthread_mutex_init(&bank_balance_mutex, NULL);	
 }
 
+//********************************************
+// function name: ~bank
+// Description: destructor
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
 bank::~bank()
 {
 	//destroying the readers-writers mutexes:
@@ -78,7 +94,6 @@ bank::~bank()
 	pthread_mutex_destroy(&db_read_counter_mutex);
 	pthread_mutex_destroy(&bank_balance_mutex);
 }
-
 
 //********************************************
 // function name: bank_commision
@@ -103,16 +118,28 @@ void bank::bank_commision(int com_rate)
 	readerLeave();
 }
 
-bool bank::Password(int acount_id, int password)
+//********************************************
+// function name: Password
+// Description: checkes if the password for an account is correct
+// Parameters: int - account_id, int - password
+// Returns: True - if the password is correct, False - if the account does not exist ar the password is incorrect
+//***********************************************
+bool bank::Password(int account_id, int password)
 {
-	if (accounts_.find(acount_id) == accounts_.end())   // checks if the account exist
+	if (accounts_.find(account_id) == accounts_.end())   // checks if the account exist
 	{
 		return false;
 	}
-	return ((*accounts_.find(acount_id)).second.getPassword() == password);	 // checks if the passowrd for the account is correct
+	return ((*accounts_.find(account_id)).second.getPassword() == password);	 // checks if the passowrd for the account is correct
 }
 
-void bank::print_bank()
+//********************************************
+// function name: Print_Bank
+// Description: prints each all accounts status
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void bank::Print_Bank()
 {
 	cout << "Current Bank Status" << endl;
 	pthread_mutex_lock(&mutex_accountsDB_write);
@@ -124,38 +151,52 @@ void bank::print_bank()
 	pthread_mutex_unlock(&mutex_accountsDB_write);
 }
 
-void bank::Open_Account(int acount_id, int password, int init_balance, int ATM_ID)
+//********************************************
+// function name: Open_Account
+// Description: Open a new Account
+// Parameters: int - account_id, int - password, int - init_balance, int - ATM_ID
+// Returns: NONE
+//***********************************************
+void bank::Open_Account(int account_id, int password, int init_balance, int ATM_ID)
 {
 	
 	pthread_mutex_lock(&mutex_accountsDB_write);
-	if (accounts_.find(acount_id) == accounts_.end())	// the account do not exist
+	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
-		// add addind - fix
-		cout << ATM_ID << ": New account id is " << acount_id << " with password " << password << " and initial balance " << init_balance << endl;
+		account new_account(account_id, password, init_balance);
+		accounts_.insert(pair<int, account>(account_id, new_account));
+		cout << OPEN_ACCOUNT_SUCCEEDED;
 	}
 	else   // the account already exist
 	{
-		cout << "Error " << ATM_ID << ": Your transaction failed – account with the same id exists" << endl;
+		cout << ACCOUNT_ALREADY_EXISTS;
 	}
 	pthread_mutex_unlock(&mutex_accountsDB_write);
 }
 
-void bank::Deposit_Account(int acount_id, int password, int amount, int ATM_ID)   // ?????????????
+//********************************************
+// function name: Deposit_Account
+// Description: Deposit a certain amount of money to an account and prints it to the log file
+// Parameters:  int - account_id, int - account_password,  int - amount_to_withdraw, int - ATM_ID
+// Returns: NONE
+//***********************************************
+void bank::Deposit_Account(int account_id, int password, int amount, int ATM_ID)   // ?????????????
 {
-	pthread_mutex_lock(&db_read_counter_mutex);
-	if (!db_readers_counter++)
+	readerEnter(); // db reader enter
+	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
-		pthread_mutex_lock(&mutex_accountsDB_write);
+		cout << ACCOUNT_NOT_EXISTS;
 	}
-	pthread_mutex_unlock(&db_read_counter_mutex);
-	// do something
-	pthread_mutex_lock(&db_read_counter_mutex);
-	if (!db_readers_counter)
+	else if (!Password(account_id, password))	// the account exist and the password is incorrect
 	{
-		pthread_mutex_unlock(&mutex_accountsDB_write);
+		cout << INCORECT_PASSWORD;
 	}
-	pthread_mutex_unlock(&mutex_accountsDB_write);
-
+	else  //perform deposit
+	{
+		int new_balance = (*accounts_.find(account_id)).second.updateBalance(amount);
+		cout << DEPOSIT_SUCCEEDED;
+	}
+	readerLeave(); // db reader leave
 }
 
 //********************************************
@@ -195,7 +236,7 @@ void bank::Withdraw_Account(int account_id, int password, int amount, int ATM_ID
 
 //********************************************
 // function name: Get_Balance_Account
-// Description: gets the current balance of an acount and prints it to the log file
+// Description: gets the current balance of an account and prints it to the log file
 // Parameters: 3 int - account_id, account_password, and ATM_ID
 // Returns: NONE
 //***********************************************
@@ -221,29 +262,69 @@ void bank::Get_Balance_Account(int account_id, int password, int ATM_ID)
 	logPrint(&print_to_log);
 }
 
-void bank::Quit_Account(int acount_id, int password, int ATM_ID)
+//********************************************
+// function name: Quit_Account
+// Description: Close an Account
+// Parameters: int - account_id, int - password, int - ATM_ID
+// Returns: NONE
+//***********************************************
+void bank::Quit_Account(int account_id, int password, int ATM_ID)
 {
 	pthread_mutex_lock(&mutex_accountsDB_write);
-	if (accounts_.find(acount_id) == accounts_.end())	// the account do not exist
+	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
-		cout << "Error " << ATM_ID << ": Your transaction failed – account id " << acount_id << " does not exist" << endl;
+		cout << ACCOUNT_NOT_EXISTS;
 	}
-	else if (!Password(acount_id, password))	// the account exist and the password is incorrect
+	else if (!Password(account_id, password))	// the account exist and the password is incorrect
 	{
-		cout << "Error " << ATM_ID << ": Your transaction failed – password for account id " << acount_id << " is incorrect" << endl;
+		cout << INCORECT_PASSWORD;
 	}
 	else   // the account exist and the password is correct
 	{
-		cout << ATM_ID << ": Account id " << acount_id << " is now closed. Balance was " << (*accounts_.find(acount_id)).second.getBalance() << endl;
+		cout << ATM_ID << ": Account id " << account_id << " is now closed. Balance was " << (*accounts_.find(account_id)).second.getBalance() << endl;
 		// add closing - fix
 	}
 	pthread_mutex_unlock(&mutex_accountsDB_write);
 
 }
 
-void bank::Transfer_Account(int acount_id_source, int password, int acount_id_target, int amount, int ATM_ID)
+void bank::Transfer_Account(int account_id, int password, int account_id_target, int amount, int ATM_ID)
 {
-
+	readerEnter(); // db reader enter
+	map<int, account>::iterator source = accounts_.find(account_id);
+	map<int, account>::iterator target = accounts_.find(account_id_target);
+	
+	if (source == accounts_.end())	// the source account does not exist
+	{
+		cout << ACCOUNT_NOT_EXISTS;
+	}
+	else if (target == accounts_.end())	// the target account does not exist
+	{
+		cout << "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist" << endl;
+	}
+	else
+	{
+		// lock the accouts from being changed
+		(*source).second.lockAccount();
+		(*target).second.lockAccount();
+		if (!Password(account_id, password))	// the source account exist and the password is incorrect
+		{
+			cout << INCORECT_PASSWORD;
+		}
+		else if ((*source).second.getBalance()<amount)	// the source account do not have enough money in his account
+		{
+			cout << BALANCE_NOT_SUFFICIENT;
+		}
+		else
+		{
+			int source_balance = (*source).second.moneyTransfer(-1 * amount);
+			int target_balance = (*target).second.moneyTransfer(amount);
+			cout << ATM_ID << ": Transfer " << amount << " from account " << account_id << " to account " << account_id_target << " new account balance is " << source_balance << " new target account balance is " << target_balance << endl;
+		}
+		(*source).second.unlockAccount();
+		(*target).second.unlockAccount();
+	}
+	readerLeave(); // db reader leave
 }
 
 

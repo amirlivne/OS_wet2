@@ -107,3 +107,44 @@ int account::payCommision(int com_rate)
 	return commision_taken;
 }
 
+//********************************************
+// function name: lockAccount
+// Description: lock account from changing the balance
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void account::lockAccount()
+{
+	pthread_mutex_lock(&write_mutex_);
+}
+
+//********************************************
+// function name: unlockAccount
+// Description: unlock account from changing the balance
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void account::unlockAccount()
+{
+	pthread_mutex_lock(&write_mutex_);
+}
+
+//********************************************
+// function name: moneyTransfer
+// Description: updates the current balance of an account
+// Parameters: the amount to add to the current balance (could be negative)
+// Returns: an integer - amount of balance after update, or -1 in case of failure
+//***********************************************
+int account::moneyTransfer(int amount)
+{
+	if (balance_ + amount < 0) //
+	{
+		pthread_mutex_unlock(&write_mutex_);
+		return -1;
+	}
+	sleep(1);
+	balance_ += amount;
+	int result = balance_;
+	return result;
+}
+

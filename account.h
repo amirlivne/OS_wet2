@@ -24,8 +24,13 @@ public:
 	int getPassword() const;
 	int getID() const;
 	int updateBalance(int amount);
+	int moneyTransfer(int amount);
 	int getBalance();
 	int payCommision(int com_rate);
+	void lockAccount();
+	void unlockAccount();
+
+
 
 };
 
