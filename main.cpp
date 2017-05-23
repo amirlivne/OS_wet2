@@ -1,4 +1,4 @@
-//#define HAVE_STRUCT_TIMESPEC
+#define HAVE_STRUCT_TIMESPEC
 #include <pthread.h>
 #include <iostream>
 #include <stdlib.h>
@@ -6,12 +6,14 @@
 #include <fstream>
 #include <sstream>
 #include "account.h"
+#include "bank.h"
 #include <vector> //debug
 
 using namespace std;
 
 ofstream Log_file;
 pthread_mutex_t log_file_mutex;
+bank best_bank;
 
 typedef struct ATM_ {
 	int id;
@@ -33,9 +35,10 @@ void* activateATM(void* patm)
 	file.open(curr_ATM->input_file);
 	int accountID, password, amount;
 	char cmd;
-	account test_account(1111, 1234, 1000); //debug
+	//account test_account(1111, 1234, 1000); //debug
 	while (!file.eof())
 	{
+		usleep(100000); //sleep for 100,000 micro sec == 100 milisec == 0.1 sec
 		getline(file, sLine);
 		istringstream iss(sLine);
 		iss >> cmd;
@@ -94,7 +97,8 @@ void* commision_func(void* ATMs_active_flag)
 	while (*ATMs_active)
 	{
 		sleep(3); //sleep for 3 sec
-		//add commision function;
+		int com_rate = rand() % 3 + 2; //random int between 2-4
+		best_bank.bank_commision(com_rate);
 	}
 	pthread_exit(NULL);
 	void* res = 0; //debug
@@ -105,7 +109,7 @@ void* commision_func(void* ATMs_active_flag)
 void* print_bank_func(void* prog_running_flag)
 {
 	bool* prog_running = (bool*)prog_running_flag;
-	while (prog_running)
+	while (*prog_running)
 	{
 		usleep(500000); //sleep for 500,000 micro sec == 0.5 sec
 		//add print functions
@@ -116,7 +120,6 @@ void* print_bank_func(void* prog_running_flag)
 }
 
 int main(int argc, char *argv[]) {
-	
 	//initilizing log file
 	Log_file.open("log.txt");
 	//initilizing log file mutex
@@ -158,7 +161,7 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < ATM_num; i++)
 	{
 		//activating the N ATMs
-		rv = pthread_create(&ATM_threads[i], NULL, activateATM, (void*)&ATMs[0]);
+		rv = pthread_create(&ATM_threads[i], NULL, activateATM, (void*)&ATMs[i]);
 		if (rv)
 		{
 			cout << "Error <" << i + 1 << ">: error in creating ATM thread" << endl;
@@ -177,7 +180,7 @@ int main(int argc, char *argv[]) {
 	//initilizng print thread;
 	pthread_t print_bank_thread;
 	bool prog_running_flag = true; //a flag to the the print thread when to stop running
-	rv = pthread_create(&print_bank_thread, NULL, print_bank_func, NULL);
+	rv = pthread_create(&print_bank_thread, NULL, print_bank_func, &prog_running_flag);
 	if (rv)
 	{
 		cout << "Error in creating Print Bank thread" << endl;
