@@ -23,5 +23,6 @@ public:
 	int getID() const;
 	int updateBalance(int amount);
 	int getBalance();
+	int payCommision(int com_rate);
 
 };

@@ -5,6 +5,8 @@
 #define INCORECT_PASSWORD "Error " << ATM_ID << ": Your transaction failed – password for account id " << account_id << " is incorrect" << endl
 #define BALANCE_NOT_SUFFICIENT "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " balance is lower than " << amount << endl;
 #define WITHDRAWAL_SUCCEEDED ATM_ID << ": Account " << account_id << " new balance is " << rv << " after " << amount << " $ was withdrew" << endl
+#define CURRENT_BALANCE ATM_ID << ": Account " << account_id << " balance is " << curr_balance
+
 using namespace std;
 
 extern ofstream Log_file;
@@ -157,14 +159,14 @@ void bank::Deposit_Account(int acount_id, int password, int amount, int ATM_ID) 
 
 //********************************************
 // function name: Withdraw_Account
-// Description: Withdraw a certain amount of money from an account
+// Description: Withdraw a certain amount of money from an account and prints it to the log file
 // Parameters: 4 int - account_id, account_password,  amount_to_withdraw, and ATM_ID
 // Returns: NONE
 //***********************************************
 void bank::Withdraw_Account(int account_id, int password, int amount, int ATM_ID)
 {
-	readerEnter();
 	ostringstream print_to_log;
+	readerEnter(); // db reader enter
 	map<int, account>::iterator it = accounts_.find(account_id);
 	if (it == accounts_.end())	// the account does not exist
 	{
@@ -186,13 +188,36 @@ void bank::Withdraw_Account(int account_id, int password, int amount, int ATM_ID
 			print_to_log << WITHDRAWAL_SUCCEEDED;
 		}
 	}
-	readerLeave();
+	readerLeave(); // db reader leave
 	logPrint(&print_to_log);
 }
 
-void bank::Get_Balance_Account(int acount_id, int password, int ATM_ID)
+//********************************************
+// function name: Get_Balance_Account
+// Description: gets the current balance of an acount and prints it to the log file
+// Parameters: 3 int - account_id, account_password, and ATM_ID
+// Returns: NONE
+//***********************************************
+void bank::Get_Balance_Account(int account_id, int password, int ATM_ID)
 {
-
+	ostringstream print_to_log;
+	readerEnter(); // db reader enter
+	map<int, account>::iterator it = accounts_.find(account_id);
+	if (it == accounts_.end())	// the account does not exist
+	{
+		print_to_log << ACCOUNT_NOT_EXISTS;
+	}
+	else if (!Password(it->second.getID(), password))	// the password is incorrect
+	{
+		print_to_log << INCORECT_PASSWORD;
+	}
+	else
+	{
+		int curr_balance = it->second.getBalance();
+		print_to_log << CURRENT_BALANCE;
+	}
+	readerLeave(); // db reader leave
+	logPrint(&print_to_log);
 }
 
 void bank::Quit_Account(int acount_id, int password, int ATM_ID)
