@@ -49,28 +49,27 @@ void* activateATM(void* patm)
 		case 'O':
 			int initial_balance;
 			iss >> initial_balance;
-			//add Open functions
+			best_bank.Open_Account(accountID, password, initial_balance, curr_ATM->id);
 			break;
 		case 'D':
 			iss >> amount;
-			//add Deposit functions
+			best_bank.Deposit_Account(accountID, password, amount, curr_ATM->id);
 			break;
 		case 'W':
 			iss >> amount;
-			amount = amount*(-1);
-			//add Withrawl functions
+			best_bank.Withdraw_Account(accountID, password, amount, curr_ATM->id);
 			break;
 		case 'B':
-			//add Balance enqury functions
+			best_bank.Get_Balance_Account(accountID, password, curr_ATM->id);
 			break;
 		case 'Q':
-			//add Delete account functions
+			best_bank.Quit_Account(accountID, password, curr_ATM->id);
 			break;
 		case 'T':
 			int target;
 			iss >> target;
 			iss >> amount;
-			//add Transfer functions
+			best_bank.Transfer_Account(accountID, password, target, amount, curr_ATM->id);
 			break;
 		default: //if the actions is not recognized;
 			pthread_mutex_lock(&log_file_mutex);

@@ -145,16 +145,21 @@ bool bank::Password(int account_id, int password)
 // Parameters: NONE
 // Returns: NONE
 //***********************************************
-void bank::Print_Bank()
+void bank::Print_Bank() 
 {
-	cout << "Current Bank Status" << endl;
-	pthread_mutex_lock(&mutex_accountsDB_write);
+	ostringstream print_to_log;
+	print_to_log << "Current Bank Status" << endl;
+	readerEnter();
 	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
 	{
-		cout << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
+		print_to_log << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
+		logPrint(&print_to_log);
 	}
-	cout << "The Bank has " << bank_money_ << " $" << endl;
-	pthread_mutex_unlock(&mutex_accountsDB_write);
+	pthread_mutex_lock(&bank_balance_mutex);
+	print_to_log << "The Bank has " << bank_money_ << " $" << endl;
+	pthread_mutex_unlock(&bank_balance_mutex);
+	readerLeave();
+	logPrint(&print_to_log);
 }
 
 //********************************************
@@ -165,19 +170,20 @@ void bank::Print_Bank()
 //***********************************************
 void bank::Open_Account(int account_id, int password, int init_balance, int ATM_ID)
 {
-	
+	ostringstream print_to_log;
 	pthread_mutex_lock(&mutex_accountsDB_write);
 	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
 		account new_account(account_id, password, init_balance);
 		accounts_.insert(pair<int, account>(account_id, new_account));
-		cout << OPEN_ACCOUNT_SUCCEEDED;
+		print_to_log << OPEN_ACCOUNT_SUCCEEDED;
 	}
 	else   // the account already exist
 	{
-		cout << ACCOUNT_ALREADY_EXISTS;
+		print_to_log << ACCOUNT_ALREADY_EXISTS;
 	}
 	pthread_mutex_unlock(&mutex_accountsDB_write);
+	logPrint(&print_to_log);
 }
 
 //********************************************
@@ -188,21 +194,23 @@ void bank::Open_Account(int account_id, int password, int init_balance, int ATM_
 //***********************************************
 void bank::Deposit_Account(int account_id, int password, int amount, int ATM_ID)   // ?????????????
 {
+	ostringstream print_to_log;
 	readerEnter(); // db reader enter
 	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
-		cout << ACCOUNT_NOT_EXISTS;
+		print_to_log << ACCOUNT_NOT_EXISTS;
 	}
 	else if (!Password(account_id, password))	// the account exist and the password is incorrect
 	{
-		cout << INCORECT_PASSWORD;
+		print_to_log << INCORECT_PASSWORD;
 	}
 	else  //perform deposit
 	{
 		int new_balance = (*accounts_.find(account_id)).second.updateBalance(amount);
-		cout << DEPOSIT_SUCCEEDED;
+		print_to_log << DEPOSIT_SUCCEEDED;
 	}
 	readerLeave(); // db reader leave
+	logPrint(&print_to_log);
 }
 
 //********************************************
@@ -276,22 +284,23 @@ void bank::Get_Balance_Account(int account_id, int password, int ATM_ID)
 //***********************************************
 void bank::Quit_Account(int account_id, int password, int ATM_ID)
 {
+	ostringstream print_to_log;
 	pthread_mutex_lock(&mutex_accountsDB_write);
 	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
-		cout << ACCOUNT_NOT_EXISTS;
+		print_to_log << ACCOUNT_NOT_EXISTS;
 	}
 	else if (!Password(account_id, password))	// the account exist and the password is incorrect
 	{
-		cout << INCORECT_PASSWORD;
+		print_to_log << INCORECT_PASSWORD;
 	}
 	else   // the account exist and the password is correct
 	{
-		cout << ATM_ID << ": Account id " << account_id << " is now closed. Balance was " << (*accounts_.find(account_id)).second.getBalance() << endl;
+		print_to_log << ATM_ID << ": Account id " << account_id << " is now closed. Balance was " << (*accounts_.find(account_id)).second.getBalance() << endl;
 		// add closing - fix
 	}
 	pthread_mutex_unlock(&mutex_accountsDB_write);
-
+	logPrint(&print_to_log);
 }
 
 void bank::Transfer_Account(int account_id, int password, int account_id_target, int amount, int ATM_ID)
