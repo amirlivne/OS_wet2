@@ -111,7 +111,7 @@ void* print_bank_func(void* prog_running_flag)
 	while (*prog_running)
 	{
 		usleep(500000); //sleep for 500,000 micro sec == 0.5 sec
-		//add print functions
+		best_bank.Print_Bank();
 	}
 	pthread_exit(NULL);
 	void* res = NULL;
