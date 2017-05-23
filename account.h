@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string>
-#include <mutex>
+#include <pthread.h>
 
 
 typedef enum result_ {PASS_ERR, BALANCE_ERR , SUCCESS} result;
@@ -13,11 +13,12 @@ private:
 	const int account_id_;
 	int balance_;
 	const int password_;
-	unsigned int readers_counter;
-	mutex write_mutex;
-	mutex read_counter_mutex;
+	unsigned int readers_counter_;
+	pthread_mutex_t write_mutex_;
+	pthread_mutex_t read_counter_mutex_;
 public:
-	account(int id, int pass, int init_balance) : account_id_(id), password_(pass), balance_(init_balance), readers_counter(0){};
+	account(int id, int pass, int init_balance);
+	~account();
 	int getPassword() const;
 	int getID() const;
 	int updateBalance(int amount);

@@ -15,14 +15,15 @@ using namespace std;
 
 class bank {
 private:
-	mutex mutex_accountsDB_write;
+	pthread_mutex_t mutex_accountsDB_write;
 	unsigned int db_readers_counter;
-	mutex db_read_counter_mutex;
+	pthread_mutex_t db_read_counter_mutex;
 	int bank_money_;
 	map<int, account> accounts_;
 
 public:
 	bank();
+	~bank();
 	void bank_commision();
 	void print_bank();
 	void Open_Account(int acount_id, int password, int init_balance, int ATM_ID);

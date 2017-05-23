@@ -3,11 +3,24 @@
 
 using namespace std;
 
+
 bank::bank()
 {
 	bank_money_ = 0;
 	db_readers_counter = 0;
+
+	//initilizing the readers-writers mutexes:
+	pthread_mutex_init(&mutex_accountsDB_write, NULL);
+	pthread_mutex_init(&db_read_counter_mutex, NULL);
 }
+
+bank::~bank()
+{
+	//destroying the readers-writers mutexes:
+	pthread_mutex_destroy(&mutex_accountsDB_write);
+	pthread_mutex_destroy(&db_read_counter_mutex);
+}
+
 
 void bank::bank_commision()
 {
@@ -26,16 +39,19 @@ bool bank::Password(int acount_id, int password)
 void bank::print_bank()
 {
 	cout << "Current Bank Status" << endl;
+	pthread_mutex_lock(&mutex_accountsDB_write);
 	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
 	{
-			cout << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
+		cout << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
 	}
 	cout << "The Bank has " << bank_money_ << " $" << endl;
+	pthread_mutex_unlock(&mutex_accountsDB_write);
 }
 
 void bank::Open_Account(int acount_id, int password, int init_balance, int ATM_ID)
 {
-	mutex_accountsDB_write.lock();
+	
+	pthread_mutex_lock(&mutex_accountsDB_write);
 	if (accounts_.find(acount_id) == accounts_.end())	// the account do not exist
 	{
 		// add addind - fix
@@ -45,25 +61,25 @@ void bank::Open_Account(int acount_id, int password, int init_balance, int ATM_I
 	{
 		cout << "Error " << ATM_ID << ": Your transaction failed – account with the same id exists" << endl;
 	}
-	mutex_accountsDB_write.unlock();
+	pthread_mutex_unlock(&mutex_accountsDB_write);
 }
 
 void bank::Deposit_Account(int acount_id, int password, int amount, int ATM_ID)   // ?????????????
 {
-	db_read_counter_mutex.lock();
+	pthread_mutex_lock(&db_read_counter_mutex);
 	if (!db_readers_counter++)
 	{
-		mutex_accountsDB_write.lock();
+		pthread_mutex_lock(&mutex_accountsDB_write);
 	}
-	db_read_counter_mutex.unlock();
+	pthread_mutex_unlock(&db_read_counter_mutex);
 	// do something
-	db_read_counter_mutex.lock();
+	pthread_mutex_lock(&db_read_counter_mutex);
 	if (!db_readers_counter)
 	{
-		mutex_accountsDB_write.unlock();
+		pthread_mutex_unlock(&mutex_accountsDB_write);
 	}
-	mutex_accountsDB_write.unlock();
-	
+	pthread_mutex_unlock(&mutex_accountsDB_write);
+
 }
 
 void bank::Withdraw_Account(int acount_id, int password, int amount, int ATM_ID)
@@ -78,7 +94,7 @@ void bank::Get_Balance_Account(int acount_id, int password, int ATM_ID)
 
 void bank::Quit_Account(int acount_id, int password, int ATM_ID)
 {
-	mutex_accountsDB_write.lock();
+	pthread_mutex_lock(&mutex_accountsDB_write);
 	if (accounts_.find(acount_id) == accounts_.end())	// the account do not exist
 	{
 		cout << "Error " << ATM_ID << ": Your transaction failed – account id " << acount_id << " does not exist" << endl;
@@ -92,7 +108,7 @@ void bank::Quit_Account(int acount_id, int password, int ATM_ID)
 		cout << ATM_ID << ": Account id " << acount_id << " is now closed. Balance was " << (*accounts_.find(acount_id)).second.getBalance() << endl;
 		// add closing - fix
 	}
-	mutex_accountsDB_write.unlock();
+	pthread_mutex_unlock(&mutex_accountsDB_write);
 
 }
 
