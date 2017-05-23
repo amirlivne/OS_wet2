@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 			cout << "Error <" << i+1 << ">: error in joining ATM thread" << endl;
 		}
 	}
-
+	cout << "FINISHED ATMS ACTIONS" << endl; //debug
 	//joining commision thread
 	ATMs_active_flag = false;
 	rv = pthread_join(commission_thread, NULL);

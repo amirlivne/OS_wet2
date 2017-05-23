@@ -59,11 +59,12 @@ void bank::readerEnter()
 void bank::readerLeave()
 {
 	pthread_mutex_lock(&db_read_counter_mutex);
-	if (!--db_readers_counter)
+	db_readers_counter--;
+	if (!db_readers_counter)
 	{
 		pthread_mutex_unlock(&mutex_accountsDB_write);
 	}
-	pthread_mutex_unlock(&mutex_accountsDB_write);
+	pthread_mutex_unlock(&db_read_counter_mutex);
 }
 
 /* MEMBER BANK FUNCTIONS */
@@ -148,18 +149,16 @@ bool bank::Password(int account_id, int password)
 void bank::Print_Bank() 
 {
 	ostringstream print_to_log;
-	print_to_log << "Current Bank Status" << endl;
+	cout << "Current Bank Status" << endl;
 	readerEnter();
 	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
 	{
-		print_to_log << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
-		logPrint(&print_to_log);
+		cout << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
 	}
 	pthread_mutex_lock(&bank_balance_mutex);
-	print_to_log << "The Bank has " << bank_money_ << " $" << endl;
+	cout << "The Bank has " << bank_money_ << " $" << endl;
 	pthread_mutex_unlock(&bank_balance_mutex);
 	readerLeave();
-	logPrint(&print_to_log);
 }
 
 //********************************************
