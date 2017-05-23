@@ -33,7 +33,7 @@ void* activateATM(void* patm)
 	file.open(curr_ATM->input_file);
 	int accountID, password, amount;
 	char cmd;
-	account test_account(1111, 1234, 1000); //debug
+	//account test_account(1111, 1234, 1000); //debug
 	while (!file.eof())
 	{
 		getline(file, sLine);
@@ -105,7 +105,7 @@ void* commision_func(void* ATMs_active_flag)
 void* print_bank_func(void* prog_running_flag)
 {
 	bool* prog_running = (bool*)prog_running_flag;
-	while (prog_running)
+	while (*prog_running)
 	{
 		usleep(500000); //sleep for 500,000 micro sec == 0.5 sec
 		//add print functions
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < ATM_num; i++)
 	{
 		//activating the N ATMs
-		rv = pthread_create(&ATM_threads[i], NULL, activateATM, (void*)&ATMs[0]);
+		rv = pthread_create(&ATM_threads[i], NULL, activateATM, (void*)&ATMs[i]);
 		if (rv)
 		{
 			cout << "Error <" << i + 1 << ">: error in creating ATM thread" << endl;
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 	//initilizng print thread;
 	pthread_t print_bank_thread;
 	bool prog_running_flag = true; //a flag to the the print thread when to stop running
-	rv = pthread_create(&print_bank_thread, NULL, print_bank_func, NULL);
+	rv = pthread_create(&print_bank_thread, NULL, print_bank_func, &prog_running_flag);
 	if (rv)
 	{
 		cout << "Error in creating Print Bank thread" << endl;
