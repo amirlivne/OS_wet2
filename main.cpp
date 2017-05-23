@@ -52,7 +52,7 @@ void* activateATM(void* patm)
 
 		
 	}
-	void* res;
+	void* res = 0;
 	return res;
 }
 
