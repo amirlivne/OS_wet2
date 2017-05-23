@@ -26,7 +26,7 @@ public:
 	int updateBalance(int amount);
 	int getBalance();
 	int payCommision(int com_rate);
-
+	int transferMoney(int amount, account* dest);
 };
 
 #endif //ACCOUNT_H

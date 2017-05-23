@@ -3,18 +3,20 @@
 #define HAVE_STRUCT_TIMESPEC
 
 #define ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " does not exist" << endl
+#define DEST_ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist" << endl
 #define INCORECT_PASSWORD "Error " << ATM_ID << ": Your transaction failed – password for account id " << account_id << " is incorrect" << endl
-#define BALANCE_NOT_SUFFICIENT "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " balance is lower than " << amount << endl;
+#define BALANCE_NOT_SUFFICIENT "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " balance is lower than " << amount << endl
 #define WITHDRAWAL_SUCCEEDED ATM_ID << ": Account " << account_id << " new balance is " << rv << " after " << amount << " $ was withdrew" << endl
 #define CURRENT_BALANCE ATM_ID << ": Account " << account_id << " balance is " << curr_balance
-
+#define COMMISSION_TAKEN  "Bank: commision of " << com_rate << " % were charged, the bank gained " << com << " $ from account " << tmp_account.getID() << endl
 using namespace std;
 
 extern ofstream Log_file;
 extern pthread_mutex_t log_file_mutex;
 
 
-
+/* FUNCTIONS FOR INTERNAL USE OF THE BANK */
+////////////////////////////////////////////
 //********************************************
 // function name: logPrint
 // Description: a local function to safely print text into Log_file
@@ -60,6 +62,8 @@ void bank::readerLeave()
 	pthread_mutex_unlock(&mutex_accountsDB_write);
 }
 
+/* MEMBER BANK FUNCTIONS */
+///////////////////////////
 bank::bank()
 {
 	bank_money_ = 0;
@@ -86,7 +90,7 @@ bank::~bank()
 // Parameters: an integer (between 2-4) that means the commisions rate.
 // Returns: NONE
 //***********************************************
-void bank::bank_commision(int com_rate)
+void bank::Bank_Commission(int com_rate)
 {
 	ostringstream print_to_log;
 	readerEnter();
@@ -97,7 +101,7 @@ void bank::bank_commision(int com_rate)
 		pthread_mutex_lock(&bank_balance_mutex); // lock the bank's balance before updating it
 		bank_money_ += com;
 		pthread_mutex_unlock(&bank_balance_mutex); // unlock the bank's balance
-		print_to_log << "Bank: commision of " << com_rate << " % were charged, the bank gained " << com << " $ from account " << tmp_account.getID() << endl;
+		print_to_log << COMMISSION_TAKEN;
 		logPrint(&print_to_log);
 	}
 	readerLeave();
@@ -241,8 +245,30 @@ void bank::Quit_Account(int acount_id, int password, int ATM_ID)
 
 }
 
-void bank::Transfer_Account(int acount_id_source, int password, int acount_id_target, int amount, int ATM_ID)
+void bank::Transfer_Account(int account_id, int password, int account_id_target, int amount, int ATM_ID)
 {
+	ostringstream print_to_log;
+	readerEnter(); // db reader enter
+	map<int, account>::iterator it1 = accounts_.find(account_id);
+	map<int, account>::iterator it2 = accounts_.find(account_id_target);
+	if (it1 == accounts_.end())	// the source account does not exist
+	{
+		print_to_log << ACCOUNT_NOT_EXISTS;
+	}
+	else if (it2 == accounts_.end()) //the dest account does not exists
+	{
+		print_to_log << DEST_ACCOUNT_NOT_EXISTS;
+	}
+	else if (!Password(it2->second.getID(), password))	// the password is incorrect
+	{
+		print_to_log << INCORECT_PASSWORD;
+	}
+	else //transaction is valid
+	{
+
+	}
+	readerLeave(); // db reader leave
+	logPrint(&print_to_log);
 
 }
 

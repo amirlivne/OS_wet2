@@ -91,14 +91,14 @@ void* activateATM(void* patm)
 // Parameters: ATMs_active_flag - a pointer to a flag that says when does the ATM active.
 // Returns: NONE
 //***********************************************
-void* commision_func(void* ATMs_active_flag)
+void* commission_func(void* ATMs_active_flag)
 {
 	bool* ATMs_active = (bool*)(ATMs_active_flag);
 	while (*ATMs_active)
 	{
 		sleep(3); //sleep for 3 sec
 		int com_rate = rand() % 3 + 2; //random int between 2-4
-		best_bank.bank_commision(com_rate);
+		best_bank.Bank_Commission(com_rate);
 	}
 	pthread_exit(NULL);
 	void* res = 0; //debug
@@ -168,10 +168,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	//initilizing commision thread;
-	pthread_t commision_thread;
+	//initilizing commission thread;
+	pthread_t commission_thread;
 	bool ATMs_active_flag = true; //a flag to tell the commision when to stop running;
-	rv = pthread_create(&commision_thread, NULL, commision_func, &ATMs_active_flag);
+	rv = pthread_create(&commission_thread, NULL, commission_func, &ATMs_active_flag);
 	if (rv)
 	{
 		cout << "Error in creating Commision thread" << endl;
