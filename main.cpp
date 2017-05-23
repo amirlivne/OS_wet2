@@ -111,6 +111,8 @@ void* print_bank_func(void* prog_running_flag)
 		//add print functions
 	}
 	pthread_exit(NULL);
+	void* res = NULL;
+	return res;
 }
 
 int main(int argc, char *argv[]) {
