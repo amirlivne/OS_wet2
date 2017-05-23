@@ -1,5 +1,6 @@
 #include "account.h"
 #include "bank.h"
+#define HAVE_STRUCT_TIMESPEC
 
 #define ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " does not exist" << endl
 #define INCORECT_PASSWORD "Error " << ATM_ID << ": Your transaction failed – password for account id " << account_id << " is incorrect" << endl

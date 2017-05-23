@@ -1,9 +1,11 @@
+#ifndef ACCOUNT_H
+#define ACCOUNT_H
+
 #include <stdlib.h>
 #include <string>
 #include <pthread.h>
 
 
-typedef enum result_ {PASS_ERR, BALANCE_ERR , SUCCESS} result;
 
 using namespace std;
 
@@ -26,3 +28,5 @@ public:
 	int payCommision(int com_rate);
 
 };
+
+#endif //ACCOUNT_H
