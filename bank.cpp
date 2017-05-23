@@ -1,8 +1,61 @@
+#include "account.h"
 #include "bank.h"
 
-
+#define ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " does not exist" << endl
+#define INCORECT_PASSWORD "Error " << ATM_ID << ": Your transaction failed – password for account id " << account_id << " is incorrect" << endl
+#define BALANCE_NOT_SUFFICIENT "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " balance is lower than " << amount << endl;
+#define WITHDRAWAL_SUCCEEDED ATM_ID << ": Account " << account_id << " new balance is " << rv << " after " << amount << " $ was withdrew" << endl
 using namespace std;
 
+extern ofstream Log_file;
+extern pthread_mutex_t log_file_mutex;
+
+
+
+//********************************************
+// function name: logPrint
+// Description: a local function to safely print text into Log_file
+// Parameters: ostringstream that containts the message relevant for printing
+// Returns: NONE
+//***********************************************
+void logPrint(ostringstream* message)
+{
+	pthread_mutex_lock(&log_file_mutex); //lock the log file before writing
+	Log_file << (*message).str() << endl;
+	pthread_mutex_unlock(&log_file_mutex); //unlock the log file
+}
+
+//********************************************
+// function name: readerEnter
+// Description: safely adds 1 to the readers counter in the bank to 
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void bank::readerEnter()
+{
+	pthread_mutex_lock(&db_read_counter_mutex);
+	if (!db_readers_counter++)
+	{
+		pthread_mutex_lock(&mutex_accountsDB_write);
+	}
+	pthread_mutex_unlock(&db_read_counter_mutex);
+}
+
+//********************************************
+// function name: readerLeave
+// Description: safely subs 1 from thr readers counter in the bank
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void bank::readerLeave()
+{
+	pthread_mutex_lock(&db_read_counter_mutex);
+	if (!--db_readers_counter)
+	{
+		pthread_mutex_unlock(&mutex_accountsDB_write);
+	}
+	pthread_mutex_unlock(&mutex_accountsDB_write);
+}
 
 bank::bank()
 {
@@ -12,6 +65,7 @@ bank::bank()
 	//initilizing the readers-writers mutexes:
 	pthread_mutex_init(&mutex_accountsDB_write, NULL);
 	pthread_mutex_init(&db_read_counter_mutex, NULL);
+	pthread_mutex_init(&bank_balance_mutex, NULL);	
 }
 
 bank::~bank()
@@ -19,12 +73,31 @@ bank::~bank()
 	//destroying the readers-writers mutexes:
 	pthread_mutex_destroy(&mutex_accountsDB_write);
 	pthread_mutex_destroy(&db_read_counter_mutex);
+	pthread_mutex_destroy(&bank_balance_mutex);
 }
 
 
-void bank::bank_commision()
+//********************************************
+// function name: bank_commision
+// Description: takes commision from all of the bank's accounts
+// Parameters: an integer (between 2-4) that means the commisions rate.
+// Returns: NONE
+//***********************************************
+void bank::bank_commision(int com_rate)
 {
-
+	ostringstream print_to_log;
+	readerEnter();
+	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
+	{
+		account tmp_account = it->second; //  read the account;
+		int com = tmp_account.payCommision(com_rate); //take commision from the account
+		pthread_mutex_lock(&bank_balance_mutex); // lock the bank's balance before updating it
+		bank_money_ += com;
+		pthread_mutex_unlock(&bank_balance_mutex); // unlock the bank's balance
+		print_to_log << "Bank: commision of " << com_rate << " % were charged, the bank gained " << com << " $ from account " << tmp_account.getID() << endl;
+		logPrint(&print_to_log);
+	}
+	readerLeave();
 }
 
 bool bank::Password(int acount_id, int password)
@@ -82,9 +155,39 @@ void bank::Deposit_Account(int acount_id, int password, int amount, int ATM_ID) 
 
 }
 
-void bank::Withdraw_Account(int acount_id, int password, int amount, int ATM_ID)
+//********************************************
+// function name: Withdraw_Account
+// Description: Withdraw a certain amount of money from an account
+// Parameters: 4 int - account_id, account_password,  amount_to_withdraw, and ATM_ID
+// Returns: NONE
+//***********************************************
+void bank::Withdraw_Account(int account_id, int password, int amount, int ATM_ID)
 {
-
+	readerEnter();
+	ostringstream print_to_log;
+	map<int, account>::iterator it = accounts_.find(account_id);
+	if (it == accounts_.end())	// the account does not exist
+	{
+		print_to_log << ACCOUNT_NOT_EXISTS;
+	}
+	else if (!Password(it->second.getID(), password))	// the password is incorrect
+	{	
+		print_to_log << INCORECT_PASSWORD;
+	}
+	else //perform withdrawal
+	{
+		int rv = it->second.updateBalance(-1 * amount);
+		if (rv == -1) //if there was not enough money in the account to perform the withdrawal
+		{
+			print_to_log << BALANCE_NOT_SUFFICIENT;
+		}
+		else //if the withdrawal was succesful
+		{
+			print_to_log << WITHDRAWAL_SUCCEEDED;
+		}
+	}
+	readerLeave();
+	logPrint(&print_to_log);
 }
 
 void bank::Get_Balance_Account(int acount_id, int password, int ATM_ID)

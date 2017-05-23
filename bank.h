@@ -7,8 +7,9 @@
 #include <map>
 #include <utility>
 #include <iostream>
-#include <mutex>
-
+#include <stdio.h>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -18,13 +19,17 @@ private:
 	pthread_mutex_t mutex_accountsDB_write;
 	unsigned int db_readers_counter;
 	pthread_mutex_t db_read_counter_mutex;
+	pthread_mutex_t bank_balance_mutex;
+
 	int bank_money_;
 	map<int, account> accounts_;
+	void readerEnter();
+	void readerLeave();
 
 public:
 	bank();
 	~bank();
-	void bank_commision();
+	void bank_commision(int commision_rate);
 	void print_bank();
 	void Open_Account(int acount_id, int password, int init_balance, int ATM_ID);
 	void Deposit_Account(int acount_id, int password, int amount, int ATM_ID);

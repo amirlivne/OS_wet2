@@ -6,12 +6,14 @@
 #include <fstream>
 #include <sstream>
 #include "account.h"
+#include "bank.h"
 #include <vector> //debug
 
 using namespace std;
 
 ofstream Log_file;
 pthread_mutex_t log_file_mutex;
+bank best_bank;
 
 typedef struct ATM_ {
 	int id;
@@ -36,6 +38,7 @@ void* activateATM(void* patm)
 	//account test_account(1111, 1234, 1000); //debug
 	while (!file.eof())
 	{
+		usleep(100000); //sleep for 100,000 micro sec == 100 milisec == 0.1 sec
 		getline(file, sLine);
 		istringstream iss(sLine);
 		iss >> cmd;
@@ -94,7 +97,8 @@ void* commision_func(void* ATMs_active_flag)
 	while (*ATMs_active)
 	{
 		sleep(3); //sleep for 3 sec
-		//add commision function;
+		int com_rate = rand() % 3 + 2; //random int between 2-4
+		best_bank.bank_commision(com_rate);
 	}
 	pthread_exit(NULL);
 	void* res = 0; //debug
@@ -116,7 +120,6 @@ void* print_bank_func(void* prog_running_flag)
 }
 
 int main(int argc, char *argv[]) {
-	
 	//initilizing log file
 	Log_file.open("log.txt");
 	//initilizing log file mutex
