@@ -15,10 +15,10 @@ using namespace std;
 
 class bank {
 private:
-	pthread_mutex_t mutex_accountsDB_write;
-	unsigned int db_readers_counter;
-	pthread_mutex_t db_read_counter_mutex;
 	int bank_money_;
+	unsigned int db_readers_counter;
+	pthread_mutex_t mutex_accountsDB_write;
+	pthread_mutex_t db_read_counter_mutex;
 	map<int, account> accounts_;
 
 public:
