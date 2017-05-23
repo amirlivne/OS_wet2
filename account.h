@@ -29,9 +29,7 @@ public:
 	int payCommision(int com_rate);
 	void lockAccount();
 	void unlockAccount();
-
-
-
+		
 };
 
 #endif //ACCOUNT_H

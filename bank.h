@@ -28,7 +28,7 @@ private:
 public:
 	bank();
 	~bank();
-	void bank_commision(int commision_rate);
+	void Bank_Commission(int commision_rate);
 	void Print_Bank();
 	void Open_Account(int account_id, int password, int init_balance, int ATM_ID);
 	void Deposit_Account(int account_id, int password, int amount, int ATM_ID);
