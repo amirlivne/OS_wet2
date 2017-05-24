@@ -35,7 +35,6 @@ void* activateATM(void* patm)
 	file.open(curr_ATM->input_file);
 	int accountID, password, amount;
 	char cmd;
-	//account test_account(1111, 1234, 1000); //debug
 	while (!file.eof())
 	{
 		usleep(100000); //sleep for 100,000 micro sec == 100 milisec == 0.1 sec
@@ -200,7 +199,6 @@ int main(int argc, char *argv[]) {
 			cout << "Error <" << i+1 << ">: error in joining ATM thread" << endl;
 		}
 	}
-	cout << "FINISHED ATMS ACTIONS" << endl; //debug
 	//joining commision thread
 	ATMs_active_flag = false;
 	rv = pthread_join(commission_thread, NULL);

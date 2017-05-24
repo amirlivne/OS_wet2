@@ -141,7 +141,6 @@ int account::moneyTransfer(int amount)
 {
 	if (balance_ + amount < 0) //
 	{
-		pthread_mutex_unlock(&write_mutex_);
 		return -1;
 	}
 	sleep(1);
