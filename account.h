@@ -20,6 +20,7 @@ private:
 	sem_t read_counter_mutex_;
 public:
 	account(int id, int pass, int init_balance);
+	account(const account &src);
 	~account();
 	int getPassword() const;
 	int getID() const;
@@ -29,6 +30,7 @@ public:
 	int payCommision(int com_rate);
 	void lockAccount();
 	void unlockAccount();
+	//void semInit();
 		
 };
 

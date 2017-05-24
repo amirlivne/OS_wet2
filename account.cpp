@@ -12,16 +12,33 @@ using namespace std;
 //***********************************************
 account::account(int id=0, int pass=0000, int init_balance=0) : account_id_(id), password_(pass), balance_(init_balance), readers_counter_(0)
 {
-	//initilizing the readers-writers mutexes:
-	sem_init(&write_mutex_, 0, 1);
-	sem_init(&read_counter_mutex_, 0, 1);
 }
 
+//********************************************
+// function name: ~account
+// Description: account distractor
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
 account::~account()
 {
 	//destroying the readers-writers mutexes:
 	sem_destroy(&write_mutex_);
 	sem_destroy(&read_counter_mutex_);
+}
+
+//********************************************
+// function name: account(const account &src)
+// Description: copy constractor of account (ment to initilize mutexes after insertion to DB map)
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+account::account(const account &src): account_id_(src.account_id_), password_(src.password_), balance_(src.balance_)
+{
+	readers_counter_ = 0;
+	//initilizing the readers-writers mutexes:
+	sem_init(&write_mutex_, 0, 1);
+	sem_init(&read_counter_mutex_, 0, 1);
 }
 
 //********************************************
