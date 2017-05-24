@@ -1,6 +1,6 @@
 #include "account.h"
 #include "bank.h"
-#define HAVE_STRUCT_TIMESPEC
+//#define HAVE_STRUCT_TIMESPEC
 
 #define ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " does not exist"
 #define DEST_ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist"
@@ -11,12 +11,12 @@
 #define DEPOSIT_SUCCEEDED ATM_ID << ": Account id " << account_id << " new balance is " << new_balance << " after " << amount << " $ was deposited"
 #define ACCOUNT_ALREADY_EXISTS "Error " << ATM_ID << ": Your transaction failed – account with the same id exists"
 #define OPEN_ACCOUNT_SUCCEEDED ATM_ID << ": New account id is " << account_id << " with password " << password << " and initial balance " << init_balance
-#define COMMISSION_TAKEN  "Bank: commision of " << com_rate << " % were charged, the bank gained " << com << " $ from account " << tmp_account.getID()
+#define COMMISSION_TAKEN  "Bank: commision of " << com_rate << " % were charged, the bank gained " << com << " $ from account " << it->second.getID()
 
 using namespace std;
 
 extern ofstream Log_file;
-extern pthread_mutex_t log_file_mutex;
+extern sem_t log_file_mutex;
 
 
 /* FUNCTIONS FOR INTERNAL USE OF THE BANK */
@@ -29,9 +29,9 @@ extern pthread_mutex_t log_file_mutex;
 //***********************************************
 void logPrint(ostringstream* message)
 {
-	pthread_mutex_lock(&log_file_mutex); //lock the log file before writing
+	sem_wait(&log_file_mutex); //lock the log file before writing
 	Log_file << (*message).str() << endl;
-	pthread_mutex_unlock(&log_file_mutex); //unlock the log file
+	sem_post(&log_file_mutex); //unlock the log file
 }
 
 //********************************************
@@ -42,12 +42,12 @@ void logPrint(ostringstream* message)
 //***********************************************
 void bank::readerEnter()
 {
-	pthread_mutex_lock(&db_read_counter_mutex);
+	sem_wait(&db_read_counter_mutex);
 	if (!db_readers_counter++)
 	{
-		pthread_mutex_lock(&mutex_accountsDB_write);
+		sem_wait(&mutex_accountsDB_write);
 	}
-	pthread_mutex_unlock(&db_read_counter_mutex);
+	sem_post(&db_read_counter_mutex);
 }
 
 //********************************************
@@ -58,13 +58,13 @@ void bank::readerEnter()
 //***********************************************
 void bank::readerLeave()
 {
-	pthread_mutex_lock(&db_read_counter_mutex);
+	sem_wait(&db_read_counter_mutex);
 	db_readers_counter--;
 	if (!db_readers_counter)
 	{
-		pthread_mutex_unlock(&mutex_accountsDB_write);
+		sem_post(&mutex_accountsDB_write);
 	}
-	pthread_mutex_unlock(&db_read_counter_mutex);
+	sem_post(&db_read_counter_mutex);
 }
 
 /* MEMBER BANK FUNCTIONS */
@@ -83,9 +83,9 @@ bank::bank()
 	db_readers_counter = 0;
 
 	//initilizing the readers-writers mutexes:
-	pthread_mutex_init(&mutex_accountsDB_write, NULL);
-	pthread_mutex_init(&db_read_counter_mutex, NULL);
-	pthread_mutex_init(&bank_balance_mutex, NULL);	
+	sem_init(&mutex_accountsDB_write, 0, 1);
+	sem_init(&db_read_counter_mutex, 0, 1);
+	sem_init(&bank_balance_mutex, 0, 1);
 }
 
 //********************************************
@@ -97,9 +97,9 @@ bank::bank()
 bank::~bank()
 {
 	//destroying the readers-writers mutexes:
-	pthread_mutex_destroy(&mutex_accountsDB_write);
-	pthread_mutex_destroy(&db_read_counter_mutex);
-	pthread_mutex_destroy(&bank_balance_mutex);
+	sem_destroy(&mutex_accountsDB_write);
+	sem_destroy(&db_read_counter_mutex);
+	sem_destroy(&bank_balance_mutex);
 }
 
 //********************************************
@@ -110,15 +110,14 @@ bank::~bank()
 //***********************************************
 void bank::Bank_Commission(int com_rate)
 {
-	ostringstream print_to_log;
 	readerEnter();
 	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
 	{
-		account tmp_account = it->second; //  read the account;
-		int com = tmp_account.payCommision(com_rate); //take commision from the account
-		pthread_mutex_lock(&bank_balance_mutex); // lock the bank's balance before updating it
+		ostringstream print_to_log;
+		int com = it->second.payCommision(com_rate); //take commision from the account
+		sem_wait(&bank_balance_mutex); // lock the bank's balance before updating it
 		bank_money_ += com;
-		pthread_mutex_unlock(&bank_balance_mutex); // unlock the bank's balance
+		sem_post(&bank_balance_mutex); // unlock the bank's balance
 		print_to_log << COMMISSION_TAKEN;
 		logPrint(&print_to_log);
 	}
@@ -155,9 +154,9 @@ void bank::Print_Bank()
 	{
 		cout << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
 	}
-	pthread_mutex_lock(&bank_balance_mutex);
+	sem_wait(&bank_balance_mutex);
 	cout << "The Bank has " << bank_money_ << " $" << endl;
-	pthread_mutex_unlock(&bank_balance_mutex);
+	sem_post(&bank_balance_mutex);
 	readerLeave();
 }
 
@@ -170,7 +169,7 @@ void bank::Print_Bank()
 void bank::Open_Account(int account_id, int password, int init_balance, int ATM_ID)
 {
 	ostringstream print_to_log;
-	pthread_mutex_lock(&mutex_accountsDB_write);
+	sem_wait(&mutex_accountsDB_write);
 	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
 		account new_account(account_id, password, init_balance);
@@ -181,7 +180,7 @@ void bank::Open_Account(int account_id, int password, int init_balance, int ATM_
 	{
 		print_to_log << ACCOUNT_ALREADY_EXISTS;
 	}
-	pthread_mutex_unlock(&mutex_accountsDB_write);
+	sem_post(&mutex_accountsDB_write);
 	logPrint(&print_to_log);
 }
 
@@ -284,7 +283,7 @@ void bank::Get_Balance_Account(int account_id, int password, int ATM_ID)
 void bank::Quit_Account(int account_id, int password, int ATM_ID)
 {
 	ostringstream print_to_log;
-	pthread_mutex_lock(&mutex_accountsDB_write);
+	sem_wait(&mutex_accountsDB_write);
 	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
 		print_to_log << ACCOUNT_NOT_EXISTS;
@@ -298,7 +297,7 @@ void bank::Quit_Account(int account_id, int password, int ATM_ID)
 		print_to_log << ATM_ID << ": Account id " << account_id << " is now closed. Balance was " << (*accounts_.find(account_id)).second.getBalance();
 		accounts_.erase(account_id);
 	}
-	pthread_mutex_unlock(&mutex_accountsDB_write);
+	sem_post(&mutex_accountsDB_write);
 	logPrint(&print_to_log);
 }
 

@@ -13,15 +13,15 @@ using namespace std;
 account::account(int id=0, int pass=0000, int init_balance=0) : account_id_(id), password_(pass), balance_(init_balance), readers_counter_(0)
 {
 	//initilizing the readers-writers mutexes:
-	pthread_mutex_init(&write_mutex_, NULL);
-	pthread_mutex_init(&read_counter_mutex_, NULL);
+	sem_init(&write_mutex_, 0, 1);
+	sem_init(&read_counter_mutex_, 0, 1);
 }
 
 account::~account()
 {
 	//destroying the readers-writers mutexes:
-	pthread_mutex_destroy(&write_mutex_);
-	pthread_mutex_destroy(&read_counter_mutex_);
+	sem_destroy(&write_mutex_);
+	sem_destroy(&read_counter_mutex_);
 }
 
 //********************************************
@@ -51,16 +51,16 @@ int account::getID() const {
 // Returns: an integer - amount of balance after update, or -1 in case of failure
 //***********************************************
 int account::updateBalance(int amount) {
-	pthread_mutex_lock(&write_mutex_);
+	sem_wait(&write_mutex_);
 	if (balance_ + amount < 0) //
 	{
-		pthread_mutex_unlock(&write_mutex_);
+		sem_post(&write_mutex_);
 		return -1;
 	}
 	sleep(1);
 	balance_ += amount;
 	int result = balance_;
-	pthread_mutex_unlock(&write_mutex_);
+	sem_post(&write_mutex_);
 	return result;
 }
 
@@ -72,23 +72,23 @@ int account::updateBalance(int amount) {
 //***********************************************
 int account::getBalance() {
 		//lock the reader mutex
-	pthread_mutex_lock(&read_counter_mutex_);
+	sem_wait(&read_counter_mutex_);
 	if (!readers_counter_++) //if this is the first reader, lock the writing mutex
 	{
-		pthread_mutex_lock(&write_mutex_);
+		sem_wait(&write_mutex_);
 	}
-	pthread_mutex_unlock(&read_counter_mutex_); //unlock reader counter to allow multiple readers
+	sem_post(&read_counter_mutex_); //unlock reader counter to allow multiple readers
 	//READ!
 	int result = balance_; 
 	sleep(1);
 		//lock the reader mutex
-	pthread_mutex_lock(&read_counter_mutex_);
+	sem_wait(&read_counter_mutex_);
 	readers_counter_--;
 	if (!readers_counter_) //if this is the last reader = unlock the writing mutex
 	{
-		pthread_mutex_unlock(&write_mutex_);
+		sem_post(&write_mutex_);
 	}
-	pthread_mutex_unlock(&read_counter_mutex_);
+	sem_post(&read_counter_mutex_);
 	return result;
 }
 
@@ -101,11 +101,11 @@ int account::getBalance() {
 int account::payCommision(int com_rate)
 {
 	double com_rate_precent = (double)com_rate / 100.0;
-	pthread_mutex_lock(&write_mutex_);
+	sem_wait(&write_mutex_);
 	sleep(1);
 	int commision_taken = int(balance_*com_rate_precent);
 	balance_ -= commision_taken;
-	pthread_mutex_unlock(&write_mutex_);
+	sem_post(&write_mutex_);
 	return commision_taken;
 }
 
@@ -117,7 +117,7 @@ int account::payCommision(int com_rate)
 //***********************************************
 void account::lockAccount()
 {
-	pthread_mutex_lock(&write_mutex_);
+	sem_wait(&write_mutex_);
 }
 
 //********************************************
@@ -128,7 +128,7 @@ void account::lockAccount()
 //***********************************************
 void account::unlockAccount()
 {
-	pthread_mutex_unlock(&write_mutex_);
+	sem_post(&write_mutex_);
 }
 
 //********************************************

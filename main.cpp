@@ -1,4 +1,4 @@
-#define HAVE_STRUCT_TIMESPEC
+//#define HAVE_STRUCT_TIMESPEC
 #include <pthread.h>
 #include <iostream>
 #include <stdlib.h>
@@ -7,12 +7,12 @@
 #include <sstream>
 #include "account.h"
 #include "bank.h"
-#include <vector> //debug
+
 
 using namespace std;
 
 ofstream Log_file;
-pthread_mutex_t log_file_mutex;
+sem_t log_file_mutex;
 bank best_bank;
 
 typedef struct ATM_ {
@@ -72,9 +72,9 @@ void* activateATM(void* patm)
 			best_bank.Transfer_Account(accountID, password, target, amount, curr_ATM->id);
 			break;
 		default: //if the actions is not recognized;
-			pthread_mutex_lock(&log_file_mutex);
-			Log_file << "Error <" << curr_ATM->id << ">: illigeal action" << endl;
-			pthread_mutex_unlock(&log_file_mutex);
+			sem_wait(&log_file_mutex);
+			Log_file << "Error " << curr_ATM->id << ": illigeal action" << endl;
+			sem_post(&log_file_mutex);
 			break;
 		}
 	}
@@ -97,13 +97,8 @@ void* commission_func(void* ATMs_active_flag)
 	{
 		sleep(3); //sleep for 3 sec
 		int com_rate = rand() % 3 + 2; //random int between 2-4
-		cout << "calc com rate to" << com_rate << endl;
-		cout << "started com collect" << endl;
 		best_bank.Bank_Commission(com_rate);
-		cout << "finish com collect" << endl;
 	}
-	cout << "EXIT COMMISSION THREAD" << endl;
-
 	pthread_exit(NULL);
 	void* res = 0; //debug
 	return res; //debug
@@ -116,7 +111,7 @@ void* print_bank_func(void* prog_running_flag)
 	while (*prog_running)
 	{
 		usleep(500000); //sleep for 500,000 micro sec == 0.5 sec
-	//	best_bank.Print_Bank();
+		best_bank.Print_Bank();
 	}
 	pthread_exit(NULL);
 	void* res = NULL;
@@ -127,7 +122,7 @@ int main(int argc, char *argv[]) {
 	//initilizing log file
 	Log_file.open("log.txt");
 	//initilizing log file mutex
-	pthread_mutex_init(&log_file_mutex, NULL);
+	sem_init(&log_file_mutex, 1, 1);
 
 	/*Arguments Checks:*/
 	if (argc <= 2) //at least 3 args needed (prog, ATM num, and at list 1 atm file)
@@ -217,7 +212,7 @@ int main(int argc, char *argv[]) {
 
 	//destroying log file mutex and closing the log file
 	Log_file.close();
-	pthread_mutex_destroy(&log_file_mutex);
+	sem_destroy(&log_file_mutex);
 	
 	return 1;
 }

@@ -18,9 +18,9 @@ class bank {
 private:
 	int bank_money_;
 	unsigned int db_readers_counter;
-	pthread_mutex_t mutex_accountsDB_write;
-	pthread_mutex_t db_read_counter_mutex;
-	pthread_mutex_t bank_balance_mutex;
+	sem_t mutex_accountsDB_write;
+	sem_t db_read_counter_mutex;
+	sem_t bank_balance_mutex;
 	map<int, account> accounts_;
 	void readerEnter();
 	void readerLeave();
