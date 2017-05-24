@@ -97,8 +97,13 @@ void* commission_func(void* ATMs_active_flag)
 	{
 		sleep(3); //sleep for 3 sec
 		int com_rate = rand() % 3 + 2; //random int between 2-4
+		cout << "calc com rate to" << com_rate << endl;
+		cout << "started com collect" << endl;
 		best_bank.Bank_Commission(com_rate);
+		cout << "finish com collect" << endl;
 	}
+	cout << "EXIT COMMISSION THREAD" << endl;
+
 	pthread_exit(NULL);
 	void* res = 0; //debug
 	return res; //debug
@@ -111,7 +116,7 @@ void* print_bank_func(void* prog_running_flag)
 	while (*prog_running)
 	{
 		usleep(500000); //sleep for 500,000 micro sec == 0.5 sec
-		best_bank.Print_Bank();
+	//	best_bank.Print_Bank();
 	}
 	pthread_exit(NULL);
 	void* res = NULL;
