@@ -40,6 +40,7 @@ void* activateATM(void* patm)
 	{
 		usleep(100000); //sleep for 100,000 micro sec == 100 milisec == 0.1 sec
 		getline(file, sLine);
+		cmd = NULL;
 		istringstream iss(sLine);
 		iss >> cmd;
 		iss >> accountID;

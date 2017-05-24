@@ -8,7 +8,7 @@
 #define BALANCE_NOT_SUFFICIENT "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " balance is lower than " << amount << endl
 #define WITHDRAWAL_SUCCEEDED ATM_ID << ": Account " << account_id << " new balance is " << rv << " after " << amount << " $ was withdrew" << endl
 #define CURRENT_BALANCE ATM_ID << ": Account " << account_id << " balance is " << curr_balance
-#define DEPOSIT_SUCCEEDED ATM_ID << ": Account id " << account_id << " new balance is " << new_balance << " after " << amount << "$ was deposited" << endl
+#define DEPOSIT_SUCCEEDED ATM_ID << ": Account id " << account_id << " new balance is " << new_balance << " after " << amount << " $ was deposited" << endl
 #define ACCOUNT_ALREADY_EXISTS "Error " << ATM_ID << ": Your transaction failed – account with the same id exists" << endl
 #define OPEN_ACCOUNT_SUCCEEDED ATM_ID << ": New account id is " << account_id << " with password " << password << " and initial balance " << init_balance << endl
 #define COMMISSION_TAKEN  "Bank: commision of " << com_rate << " % were charged, the bank gained " << com << " $ from account " << tmp_account.getID() << endl
