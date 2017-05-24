@@ -83,7 +83,8 @@ int account::getBalance() {
 	sleep(1);
 		//lock the reader mutex
 	pthread_mutex_lock(&read_counter_mutex_);
-	if (!--readers_counter_) //if this is the last reader = unlock the writing mutex
+	readers_counter_--;
+	if (!readers_counter_) //if this is the last reader = unlock the writing mutex
 	{
 		pthread_mutex_unlock(&write_mutex_);
 	}
