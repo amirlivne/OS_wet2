@@ -2,16 +2,16 @@
 #include "bank.h"
 #define HAVE_STRUCT_TIMESPEC
 
-#define ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " does not exist" << endl
-#define DEST_ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist" << endl
-#define INCORECT_PASSWORD "Error " << ATM_ID << ": Your transaction failed – password for account id " << account_id << " is incorrect" << endl
-#define BALANCE_NOT_SUFFICIENT "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " balance is lower than " << amount << endl
-#define WITHDRAWAL_SUCCEEDED ATM_ID << ": Account " << account_id << " new balance is " << rv << " after " << amount << " $ was withdrew" << endl
+#define ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " does not exist"
+#define DEST_ACCOUNT_NOT_EXISTS "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist"
+#define INCORECT_PASSWORD "Error " << ATM_ID << ": Your transaction failed – password for account id " << account_id << " is incorrect"
+#define BALANCE_NOT_SUFFICIENT "Error " << ATM_ID << ": Your transaction failed – account id " << account_id << " balance is lower than " << amount
+#define WITHDRAWAL_SUCCEEDED ATM_ID << ": Account " << account_id << " new balance is " << rv << " after " << amount << " $ was withdrew"
 #define CURRENT_BALANCE ATM_ID << ": Account " << account_id << " balance is " << curr_balance
-#define DEPOSIT_SUCCEEDED ATM_ID << ": Account id " << account_id << " new balance is " << new_balance << " after " << amount << " $ was deposited" << endl
-#define ACCOUNT_ALREADY_EXISTS "Error " << ATM_ID << ": Your transaction failed – account with the same id exists" << endl
-#define OPEN_ACCOUNT_SUCCEEDED ATM_ID << ": New account id is " << account_id << " with password " << password << " and initial balance " << init_balance << endl
-#define COMMISSION_TAKEN  "Bank: commision of " << com_rate << " % were charged, the bank gained " << com << " $ from account " << tmp_account.getID() << endl
+#define DEPOSIT_SUCCEEDED ATM_ID << ": Account id " << account_id << " new balance is " << new_balance << " after " << amount << " $ was deposited"
+#define ACCOUNT_ALREADY_EXISTS "Error " << ATM_ID << ": Your transaction failed – account with the same id exists"
+#define OPEN_ACCOUNT_SUCCEEDED ATM_ID << ": New account id is " << account_id << " with password " << password << " and initial balance " << init_balance
+#define COMMISSION_TAKEN  "Bank: commision of " << com_rate << " % were charged, the bank gained " << com << " $ from account " << tmp_account.getID()
 
 using namespace std;
 
@@ -295,13 +295,19 @@ void bank::Quit_Account(int account_id, int password, int ATM_ID)
 	}
 	else   // the account exist and the password is correct
 	{
-		print_to_log << ATM_ID << ": Account id " << account_id << " is now closed. Balance was " << (*accounts_.find(account_id)).second.getBalance() << endl;
-		// add closing - fix
+		print_to_log << ATM_ID << ": Account id " << account_id << " is now closed. Balance was " << (*accounts_.find(account_id)).second.getBalance();
+		accounts_.erase(account_id);
 	}
 	pthread_mutex_unlock(&mutex_accountsDB_write);
 	logPrint(&print_to_log);
 }
 
+//********************************************
+// function name: Transfer_Account
+// Description: transfer amount from source account to target account
+// Parameters: int - account_id_source, int - password, int - account_id_target, int - amount, int - ATM_ID
+// Returns: NONE
+//***********************************************
 void bank::Transfer_Account(int account_id, int password, int account_id_target, int amount, int ATM_ID)
 {
 	ostringstream print_to_log;
@@ -315,7 +321,7 @@ void bank::Transfer_Account(int account_id, int password, int account_id_target,
 	}
 	else if (target == accounts_.end())	// the target account does not exist
 	{
-		print_to_log << "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist" << endl;
+		print_to_log << "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist";
 	}
 	else
 	{
@@ -326,15 +332,18 @@ void bank::Transfer_Account(int account_id, int password, int account_id_target,
 		{
 			print_to_log << INCORECT_PASSWORD;
 		}
-		else if ((*source).second.getBalance()<amount)	// the source account do not have enough money in his account
-		{
-			print_to_log << BALANCE_NOT_SUFFICIENT;
-		}
 		else
 		{
 			int source_balance = (*source).second.moneyTransfer(-1 * amount);
-			int target_balance = (*target).second.moneyTransfer(amount);
-			print_to_log << ATM_ID << ": Transfer " << amount << " from account " << account_id << " to account " << account_id_target << " new account balance is " << source_balance << " new target account balance is " << target_balance << endl;
+			if (source_balance >= 0)
+			{
+				int target_balance = (*target).second.moneyTransfer(amount);
+				print_to_log << ATM_ID << ": Transfer " << amount << " from account " << account_id << " to account " << account_id_target << " new account balance is " << source_balance << " new target account balance is " << target_balance;
+			}
+			else  // the source account do not have enough money in his account
+			{
+				print_to_log << BALANCE_NOT_SUFFICIENT;
+			}
 		}
 		(*source).second.unlockAccount();
 		(*target).second.unlockAccount();
