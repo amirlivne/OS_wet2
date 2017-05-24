@@ -100,7 +100,7 @@ int account::getBalance() {
 //***********************************************
 int account::payCommision(int com_rate)
 {
-	double com_rate_precent = com_rate / 100;
+	double com_rate_precent = (double)com_rate / 100.0;
 	pthread_mutex_lock(&write_mutex_);
 	sleep(1);
 	int commision_taken = int(balance_*com_rate_precent);
@@ -128,7 +128,7 @@ void account::lockAccount()
 //***********************************************
 void account::unlockAccount()
 {
-	pthread_mutex_lock(&write_mutex_);
+	pthread_mutex_unlock(&write_mutex_);
 }
 
 //********************************************
