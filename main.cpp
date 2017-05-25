@@ -13,6 +13,8 @@ using namespace std;
 
 ofstream Log_file;
 sem_t log_file_mutex;
+sem_t com_flag_mutex;
+sem_t print_flag_mutex;
 bank best_bank;
 
 typedef struct ATM_ {
@@ -93,9 +95,12 @@ void* activateATM(void* patm)
 //***********************************************
 void* commission_func(void* ATMs_active_flag)
 {
-	bool* ATMs_active = (bool*)(ATMs_active_flag);
-	while (*ATMs_active)
+	while (true)
 	{
+		sem_wait(&com_flag_mutex);
+		bool ATMs_active = *((bool*)(ATMs_active_flag)); //read the current value of the flag
+		sem_post(&com_flag_mutex);
+		if (!ATMs_active) break; //if the flag is off - exit the loop (and the thread)
 		sleep(3); //sleep for 3 sec
 		int com_rate = rand() % 3 + 2; //random int between 2-4
 		best_bank.Bank_Commission(com_rate);
@@ -108,9 +113,12 @@ void* commission_func(void* ATMs_active_flag)
 
 void* print_bank_func(void* prog_running_flag)
 {
-	bool* prog_running = (bool*)prog_running_flag;
-	while (*prog_running)
+	while (true)
 	{
+		sem_wait(&print_flag_mutex);
+		bool prog_running = *((bool*)prog_running_flag); //read the current value of the flag
+		sem_post(&print_flag_mutex);
+		if (!prog_running) break; //if the flag is off - exit the loop (and the thread);
 		usleep(500000); //sleep for 500,000 micro sec == 0.5 sec
 		best_bank.Print_Bank();
 	}
@@ -123,8 +131,9 @@ int main(int argc, char *argv[]) {
 	//initilizing log file
 	Log_file.open("log.txt");
 	//initilizing log file mutex
-	sem_init(&log_file_mutex, 1, 1);
-
+	sem_init(&log_file_mutex, 0, 1);
+	sem_init(&com_flag_mutex, 0, 1);
+	sem_init(&print_flag_mutex, 0, 1);
 	/*Arguments Checks:*/
 	if (argc <= 2) //at least 3 args needed (prog, ATM num, and at list 1 atm file)
 	{
@@ -196,7 +205,9 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	//joining commision thread
+	sem_wait(&com_flag_mutex);
 	ATMs_active_flag = false;
+	sem_post(&com_flag_mutex);
 	rv = pthread_join(commission_thread, NULL);
 	if (rv)
 	{
@@ -204,7 +215,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	//joining print bank thread
+	sem_wait(&print_flag_mutex);
 	prog_running_flag = false;
+	sem_post(&print_flag_mutex);
 	rv = pthread_join(print_bank_thread, NULL);
 	if (rv)
 	{
@@ -214,6 +227,8 @@ int main(int argc, char *argv[]) {
 	//destroying log file mutex and closing the log file
 	Log_file.close();
 	sem_destroy(&log_file_mutex);
-	
+	sem_destroy(&com_flag_mutex);
+	sem_destroy(&print_flag_mutex);
+
 	return 1;
 }

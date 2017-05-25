@@ -69,12 +69,12 @@ int account::getID() const {
 //***********************************************
 int account::updateBalance(int amount) {
 	sem_wait(&write_mutex_);
+	sleep(1);
 	if (balance_ + amount < 0) //
 	{
 		sem_post(&write_mutex_);
 		return -1;
 	}
-	sleep(1);
 	balance_ += amount;
 	int result = balance_;
 	sem_post(&write_mutex_);
@@ -156,11 +156,11 @@ void account::unlockAccount()
 //***********************************************
 int account::moneyTransfer(int amount)
 {
+	sleep(1);
 	if (balance_ + amount < 0) //
 	{
 		return -1;
 	}
-	sleep(1);
 	balance_ += amount;
 	int result = balance_;
 	return result;
