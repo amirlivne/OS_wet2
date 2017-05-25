@@ -130,7 +130,7 @@ void bank::Bank_Commission(int com_rate)
 // Parameters: int - account_id, int - password
 // Returns: True - if the password is correct, False - if the account does not exist ar the password is incorrect
 //***********************************************
-bool bank::Password(int account_id, int password)
+bool bank::Password(int account_id, string password)
 {
 	if (accounts_.find(account_id) == accounts_.end())   // checks if the account exist
 	{
@@ -166,7 +166,7 @@ void bank::Print_Bank()
 // Parameters: int - account_id, int - password, int - init_balance, int - ATM_ID
 // Returns: NONE
 //***********************************************
-void bank::Open_Account(int account_id, int password, int init_balance, int ATM_ID)
+void bank::Open_Account(int account_id, string password, int init_balance, int ATM_ID)
 {
 	ostringstream print_to_log;
 	sem_wait(&mutex_accountsDB_write);
@@ -190,7 +190,7 @@ void bank::Open_Account(int account_id, int password, int init_balance, int ATM_
 // Parameters:  int - account_id, int - account_password,  int - amount_to_withdraw, int - ATM_ID
 // Returns: NONE
 //***********************************************
-void bank::Deposit_Account(int account_id, int password, int amount, int ATM_ID)   // ?????????????
+void bank::Deposit_Account(int account_id, string password, int amount, int ATM_ID)   // ?????????????
 {
 	ostringstream print_to_log;
 	readerEnter(); // db reader enter
@@ -217,7 +217,7 @@ void bank::Deposit_Account(int account_id, int password, int amount, int ATM_ID)
 // Parameters: 4 int - account_id, account_password,  amount_to_withdraw, and ATM_ID
 // Returns: NONE
 //***********************************************
-void bank::Withdraw_Account(int account_id, int password, int amount, int ATM_ID)
+void bank::Withdraw_Account(int account_id, string password, int amount, int ATM_ID)
 {
 	ostringstream print_to_log;
 	readerEnter(); // db reader enter
@@ -252,7 +252,7 @@ void bank::Withdraw_Account(int account_id, int password, int amount, int ATM_ID
 // Parameters: 3 int - account_id, account_password, and ATM_ID
 // Returns: NONE
 //***********************************************
-void bank::Get_Balance_Account(int account_id, int password, int ATM_ID)
+void bank::Get_Balance_Account(int account_id, string password, int ATM_ID)
 {
 	ostringstream print_to_log;
 	readerEnter(); // db reader enter
@@ -280,7 +280,7 @@ void bank::Get_Balance_Account(int account_id, int password, int ATM_ID)
 // Parameters: int - account_id, int - password, int - ATM_ID
 // Returns: NONE
 //***********************************************
-void bank::Quit_Account(int account_id, int password, int ATM_ID)
+void bank::Quit_Account(int account_id, string password, int ATM_ID)
 {
 	ostringstream print_to_log;
 	sem_wait(&mutex_accountsDB_write);
@@ -307,7 +307,7 @@ void bank::Quit_Account(int account_id, int password, int ATM_ID)
 // Parameters: int - account_id_source, int - password, int - account_id_target, int - amount, int - ATM_ID
 // Returns: NONE
 //***********************************************
-void bank::Transfer_Account(int account_id, int password, int account_id_target, int amount, int ATM_ID)
+void bank::Transfer_Account(int account_id, string password, int account_id_target, int amount, int ATM_ID)
 {
 	ostringstream print_to_log;
 	readerEnter(); // db reader enter

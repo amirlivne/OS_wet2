@@ -10,7 +10,7 @@ using namespace std;
 // Parameters: 3 ints - id, password and balance
 // Returns: NONE
 //***********************************************
-account::account(int id=0, int pass=0000, int init_balance=0) : account_id_(id), password_(pass), balance_(init_balance), readers_counter_(0)
+account::account(int id=0, string pass=0000, int init_balance=0) : account_id_(id), password_(pass), balance_(init_balance), readers_counter_(0)
 {
 }
 
@@ -47,7 +47,7 @@ account::account(const account &src): account_id_(src.account_id_), password_(sr
 // Parameters: NONE
 // Returns: an integer equeles to the current password. 
 //***********************************************
-int account::getPassword() const {
+string account::getPassword() const {
 	return password_;
 }
 

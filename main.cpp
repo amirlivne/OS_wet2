@@ -33,7 +33,8 @@ void* activateATM(void* patm)
 	string sLine;
 	ifstream file;
 	file.open(curr_ATM->input_file);
-	int accountID, password, amount;
+	int accountID, amount;
+	string password;
 	char cmd;
 	while (!file.eof())
 	{

@@ -30,13 +30,13 @@ public:
 	~bank();
 	void Bank_Commission(int commision_rate);
 	void Print_Bank();
-	void Open_Account(int account_id, int password, int init_balance, int ATM_ID);
-	void Deposit_Account(int account_id, int password, int amount, int ATM_ID);
-	void Withdraw_Account(int account_id, int password, int amount, int ATM_ID);
-	void Get_Balance_Account(int account_id, int password, int ATM_ID);
-	void Quit_Account(int account_id, int password, int ATM_ID);
-	void Transfer_Account(int account_id_source, int password, int account_id_target, int amount, int ATM_ID);
-	bool Password(int account_id, int password);
+	void Open_Account(int account_id, string password, int init_balance, int ATM_ID);
+	void Deposit_Account(int account_id, string password, int amount, int ATM_ID);
+	void Withdraw_Account(int account_id, string password, int amount, int ATM_ID);
+	void Get_Balance_Account(int account_id, string password, int ATM_ID);
+	void Quit_Account(int account_id, string password, int ATM_ID);
+	void Transfer_Account(int account_id_source, string password, int account_id_target, int amount, int ATM_ID);
+	bool Password(int account_id, string password);
 
 
 };
