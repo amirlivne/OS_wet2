@@ -1,5 +1,7 @@
 1. password need to be a string
 
-2. prints bank - should be printed to the screen and not for log (+see instractions for printing)
+2. prints bank - see instractions for printing
 
-3. commision - always same % need to be random and takes always 0
+4. every action need sleep(1) even if fails
+
+5. 

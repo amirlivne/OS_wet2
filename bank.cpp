@@ -147,9 +147,8 @@ bool bank::Password(int account_id, string password)
 //***********************************************
 void bank::Print_Bank() 
 {
-	ostringstream print_to_log;
-	cout << "Current Bank Status" << endl;
 	readerEnter();
+	cout << "Current Bank Status" << endl;
 	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
 	{
 		cout << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
