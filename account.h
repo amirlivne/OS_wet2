@@ -19,17 +19,18 @@ private:
 	sem_t write_mutex_;
 	sem_t read_counter_mutex_;
 public:
-	account(int id, string pass, int init_balance);
+	account(int id=0, string pass=0000, int init_balance=0);
 	account(const account &src);
 	~account();
 	string getPassword() const;
 	int getID() const;
 	int updateBalance(int amount);
-	int moneyTransfer(int amount);
 	int getBalance();
 	int payCommision(int com_rate);
-	void lockAccount();
-	void unlockAccount();
+	void lockAccountWrite();
+	void unlockAccountWrite();
+	void accountReaderEnter();
+	void accountReaderLeave();
 	//void semInit();
 		
 };

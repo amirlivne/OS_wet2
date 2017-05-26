@@ -1,7 +1,2 @@
-1. password need to be a string
-
-2. prints bank - see instractions for printing
-
-4. every action need sleep(1) even if fails
-
-5. 
+1. every action need sleep(1) even if fails
+2. change cout to cerr

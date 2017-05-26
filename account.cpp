@@ -3,6 +3,60 @@
 
 using namespace std;
 
+//********************************************
+// function name: lockAccountWrite
+// Description: lock account from changing the balance
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void account::lockAccountWrite()
+{
+	sem_wait(&write_mutex_);
+}
+
+//********************************************
+// function name: unlockAccountWrite
+// Description: unlock account from changing the balance
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void account::unlockAccountWrite()
+{
+	sem_post(&write_mutex_);
+}
+//********************************************
+// function name: accountReaderEnter
+// Description: safely adds 1 to the readers counter in the account 
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void account::accountReaderEnter()
+{
+	sem_wait(&read_counter_mutex_); //lock reader counter in order to update it
+	if (!readers_counter_++) //update the counter. if this is the first reader, lock the writing mutex 
+	{
+		sem_wait(&write_mutex_);
+	}
+	sem_post(&read_counter_mutex_); //unlock reader counter to allow multiple readers
+}
+
+//********************************************
+// function name: accountReaderLeave
+// Description: safely subs 1 from thr readers counter in the bank
+// Parameters: NONE
+// Returns: NONE
+//***********************************************
+void account::accountReaderLeave()
+{
+	sem_wait(&read_counter_mutex_); //lock reader counter in order to update it
+	readers_counter_--; //update the counter
+	if (!readers_counter_) //if this is the last reader = unlock the writing mutex
+	{
+		sem_post(&write_mutex_);
+	}
+	sem_post(&read_counter_mutex_); //unlock reader counter to allow multiple readers
+}
+
 
 //********************************************
 // function name: account
@@ -10,7 +64,7 @@ using namespace std;
 // Parameters: 3 ints - id, password and balance
 // Returns: NONE
 //***********************************************
-account::account(int id=0, string pass=0000, int init_balance=0) : account_id_(id), password_(pass), balance_(init_balance), readers_counter_(0)
+account::account(int id, string pass, int init_balance) : account_id_(id), password_(pass), balance_(init_balance), readers_counter_(0)
 {
 }
 
@@ -68,8 +122,6 @@ int account::getID() const {
 // Returns: an integer - amount of balance after update, or -1 in case of failure
 //***********************************************
 int account::updateBalance(int amount) {
-	sem_wait(&write_mutex_);
-	sleep(1);
 	if (balance_ + amount < 0) //
 	{
 		sem_post(&write_mutex_);
@@ -77,7 +129,6 @@ int account::updateBalance(int amount) {
 	}
 	balance_ += amount;
 	int result = balance_;
-	sem_post(&write_mutex_);
 	return result;
 }
 
@@ -88,24 +139,10 @@ int account::updateBalance(int amount) {
 // Returns: an integer equeles to the current balance. 
 //***********************************************
 int account::getBalance() {
-		//lock the reader mutex
-	sem_wait(&read_counter_mutex_);
-	if (!readers_counter_++) //if this is the first reader, lock the writing mutex
-	{
-		sem_wait(&write_mutex_);
-	}
-	sem_post(&read_counter_mutex_); //unlock reader counter to allow multiple readers
-	//READ!
+	accountReaderEnter();
+	//read!
 	int result = balance_; 
-	sleep(1);
-		//lock the reader mutex
-	sem_wait(&read_counter_mutex_);
-	readers_counter_--;
-	if (!readers_counter_) //if this is the last reader = unlock the writing mutex
-	{
-		sem_post(&write_mutex_);
-	}
-	sem_post(&read_counter_mutex_);
+	accountReaderLeave();
 	return result;
 }
 
@@ -118,51 +155,11 @@ int account::getBalance() {
 int account::payCommision(int com_rate)
 {
 	double com_rate_precent = (double)com_rate / 100.0;
-	sem_wait(&write_mutex_);
-	sleep(1);
 	int commision_taken = int(balance_*com_rate_precent);
 	balance_ -= commision_taken;
-	sem_post(&write_mutex_);
 	return commision_taken;
 }
 
-//********************************************
-// function name: lockAccount
-// Description: lock account from changing the balance
-// Parameters: NONE
-// Returns: NONE
-//***********************************************
-void account::lockAccount()
-{
-	sem_wait(&write_mutex_);
-}
 
-//********************************************
-// function name: unlockAccount
-// Description: unlock account from changing the balance
-// Parameters: NONE
-// Returns: NONE
-//***********************************************
-void account::unlockAccount()
-{
-	sem_post(&write_mutex_);
-}
 
-//********************************************
-// function name: moneyTransfer
-// Description: updates the current balance of an account
-// Parameters: the amount to add to the current balance (could be negative)
-// Returns: an integer - amount of balance after update, or -1 in case of failure
-//***********************************************
-int account::moneyTransfer(int amount)
-{
-	sleep(1);
-	if (balance_ + amount < 0) //
-	{
-		return -1;
-	}
-	balance_ += amount;
-	int result = balance_;
-	return result;
-}
 

@@ -36,7 +36,7 @@ void logPrint(ostringstream* message)
 
 //********************************************
 // function name: readerEnter
-// Description: safely adds 1 to the readers counter in the bank to 
+// Description: safely adds 1 to the readers counter in the bank
 // Parameters: NONE
 // Returns: NONE
 //***********************************************
@@ -114,10 +114,12 @@ void bank::Bank_Commission(int com_rate)
 	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
 	{
 		ostringstream print_to_log;
-		int com = it->second.payCommision(com_rate); //take commision from the account
+		it->second.lockAccountWrite(); //lock account for both write and read actions
 		sem_wait(&bank_balance_mutex); // lock the bank's balance before updating it
-		bank_money_ += com;
+		int com = it->second.payCommision(com_rate); //take commision from the account
+		bank_money_ += com; //add it to the bank's account
 		sem_post(&bank_balance_mutex); // unlock the bank's balance
+		it->second.unlockAccountWrite(); //unlock account for both write and read actions
 		print_to_log << COMMISSION_TAKEN;
 		logPrint(&print_to_log);
 	}
@@ -132,11 +134,12 @@ void bank::Bank_Commission(int com_rate)
 //***********************************************
 bool bank::Password(int account_id, string password)
 {
-	if (accounts_.find(account_id) == accounts_.end())   // checks if the account exist
+	map<int, account>::iterator it = accounts_.find(account_id);
+	if (it == accounts_.end())
 	{
 		return false;
 	}
-	return ((*accounts_.find(account_id)).second.getPassword() == password);	 // checks if the passowrd for the account is correct
+	else return (it->second.getPassword() == password);	 // checks if the passowrd for the account is correct
 }
 
 //********************************************
@@ -148,14 +151,15 @@ bool bank::Password(int account_id, string password)
 void bank::Print_Bank() 
 {
 	cout << "\033[2J\033[1;1H";
-	cout << "Current Bank Status" << endl;
 	readerEnter();
 	cout << "Current Bank Status" << endl;
 	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
 	{
+		it->second.accountReaderEnter(); //add reader to the account
 		cout << "Account " << (*it).second.getID() << ": Balance - " << (*it).second.getBalance() << " $ , Account Password - " << (*it).second.getPassword() << endl;
+		it->second.accountReaderLeave(); //sub reader from the account
 	}
-	sem_wait(&bank_balance_mutex);
+	sem_wait(&bank_balance_mutex); //omly one reader to the bank's account so no need in reader-writer locks
 	cout << "The Bank has " << bank_money_ << " $" << endl;
 	sem_post(&bank_balance_mutex);
 	readerLeave();
@@ -208,7 +212,10 @@ void bank::Deposit_Account(int account_id, string password, int amount, int ATM_
 	}
 	else  //perform deposit
 	{
-		int new_balance = (*accounts_.find(account_id)).second.updateBalance(amount);
+		accounts_[account_id].lockAccountWrite(); //lock account (for both write and read actions)
+		sleep(1);
+		int new_balance = (*accounts_.find(account_id)).second.updateBalance(amount); //update the account's balance
+		accounts_[account_id].unlockAccountWrite(); //unlock account (for both write and read actions)
 		print_to_log << DEPOSIT_SUCCEEDED;
 	}
 	readerLeave(); // db reader leave
@@ -225,20 +232,22 @@ void bank::Withdraw_Account(int account_id, string password, int amount, int ATM
 {
 	ostringstream print_to_log;
 	readerEnter(); // db reader enter
-	map<int, account>::iterator it = accounts_.find(account_id);
-	if (it == accounts_.end())	// the account does not exist
+	if (accounts_.find(account_id) == accounts_.end())	// the account does not exist
 	{
 		sleep(1);
 		print_to_log << ACCOUNT_NOT_EXISTS;
 	}
-	else if (!Password(it->second.getID(), password))	// the password is incorrect
+	else if (!Password(account_id, password))	// the password is incorrect
 	{	
 		sleep(1);
 		print_to_log << INCORECT_PASSWORD;
 	}
 	else //perform withdrawal
 	{
-		int rv = it->second.updateBalance(-1 * amount);
+		accounts_[account_id].lockAccountWrite(); //lock account (for both write and read actions)
+		sleep(1);
+		int rv = accounts_[account_id].updateBalance(-1 * amount);  //update the account's balance
+		accounts_[account_id].unlockAccountWrite(); //unlock account (for both write and read actions)
 		if (rv == -1) //if there was not enough money in the account to perform the withdrawal
 		{
 			print_to_log << BALANCE_NOT_SUFFICIENT;
@@ -262,20 +271,22 @@ void bank::Get_Balance_Account(int account_id, string password, int ATM_ID)
 {
 	ostringstream print_to_log;
 	readerEnter(); // db reader enter
-	map<int, account>::iterator it = accounts_.find(account_id);
-	if (it == accounts_.end())	// the account does not exist
+	if (accounts_.find(account_id) == accounts_.end())	// the account does not exist
 	{
 		sleep(1);
 		print_to_log << ACCOUNT_NOT_EXISTS;
 	}
-	else if (!Password(it->second.getID(), password))	// the password is incorrect
+	else if (!Password(account_id, password))	// the password is incorrect
 	{
 		sleep(1);
 		print_to_log << INCORECT_PASSWORD;
 	}
 	else
 	{
-		int curr_balance = it->second.getBalance();
+		accounts_[account_id].accountReaderEnter(); //add reader to the account
+		sleep(1);
+		int curr_balance = accounts_[account_id].getBalance(); //read the account's balance
+		accounts_[account_id].accountReaderLeave(); //sub reader from the account
 		print_to_log << CURRENT_BALANCE;
 	}
 	readerLeave(); // db reader leave
@@ -291,23 +302,23 @@ void bank::Get_Balance_Account(int account_id, string password, int ATM_ID)
 void bank::Quit_Account(int account_id, string password, int ATM_ID)
 {
 	ostringstream print_to_log;
-	sem_wait(&mutex_accountsDB_write);
+	map<int, account>::iterator it = accounts_.find(account_id);
+	sem_wait(&mutex_accountsDB_write); //lock DB to both write and read actions
+	sleep(1);
 	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
-		sleep(1);
 		print_to_log << ACCOUNT_NOT_EXISTS;
 	}
 	else if (!Password(account_id, password))	// the account exist and the password is incorrect
-	{
-		sleep(1);
+	{	
 		print_to_log << INCORECT_PASSWORD;
 	}
 	else   // the account exist and the password is correct
 	{
-		print_to_log << ATM_ID << ": Account id " << account_id << " is now closed. Balance was " << (*accounts_.find(account_id)).second.getBalance();
+		print_to_log << ATM_ID << ": Account id " << account_id << " is now closed. Balance was " << accounts_[account_id].getBalance();
 		accounts_.erase(account_id);
 	}
-	sem_post(&mutex_accountsDB_write);
+	sem_post(&mutex_accountsDB_write); //unlock DB to both write and read actions
 	logPrint(&print_to_log);
 }
 
@@ -321,15 +332,14 @@ void bank::Transfer_Account(int account_id, string password, int account_id_targ
 {
 	ostringstream print_to_log;
 	readerEnter(); // db reader enter
-	map<int, account>::iterator source = accounts_.find(account_id);
-	map<int, account>::iterator target = accounts_.find(account_id_target);
+
 	
-	if (source == accounts_.end())	// the source account does not exist
+	if (accounts_.find(account_id) == accounts_.end())	// the source account does not exist
 	{
 		sleep(1);
 		print_to_log << ACCOUNT_NOT_EXISTS;
 	}
-	else if (target == accounts_.end())	// the target account does not exist
+	else if (accounts_.find(account_id_target) == accounts_.end())	// the target account does not exist
 	{
 		sleep(1);
 		print_to_log << "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist";
@@ -342,20 +352,21 @@ void bank::Transfer_Account(int account_id, string password, int account_id_targ
 	else //if all parameters are legal
 	{
 		// lock the accouts from being changed
-		(*source).second.lockAccount();
-		(*target).second.lockAccount();
-		int source_balance = (*source).second.moneyTransfer(-1 * amount); //perform transfer
+		accounts_[account_id].lockAccountWrite();
+		accounts_[account_id_target].lockAccountWrite();
+		sleep(1);
+		int source_balance = accounts_[account_id].updateBalance(-1 * amount); //perform transfer
 		if (source_balance >= 0) //if transfer succeded
 		{
-			int target_balance = (*target).second.moneyTransfer(amount);
+			int target_balance = accounts_[account_id_target].updateBalance(amount);
 			print_to_log << ATM_ID << ": Transfer " << amount << " from account " << account_id << " to account " << account_id_target << " new account balance is " << source_balance << " new target account balance is " << target_balance;
 		}
 		else  // the source account do not have enough money in his account
 		{
 			print_to_log << BALANCE_NOT_SUFFICIENT;
 		}
-		(*source).second.unlockAccount();
-		(*target).second.unlockAccount();
+		accounts_[account_id].unlockAccountWrite();
+		accounts_[account_id_target].unlockAccountWrite();
 	}
 	readerLeave(); // db reader leave
 	logPrint(&print_to_log);
