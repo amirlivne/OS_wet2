@@ -15,7 +15,6 @@ ofstream Log_file;
 sem_t log_file_mutex;
 sem_t com_flag_mutex;
 sem_t print_flag_mutex;
-//sem_t get_line_mutex;
 bank best_bank;
 
 typedef struct ATM_ {
@@ -41,8 +40,6 @@ void* activateATM(void* patm)
 	while (file >> cmd)
 	{
 		usleep(100000); //sleep for 100,000 micro sec == 100 milisec == 0.1 sec
-		//sem_wait(&get_line_mutex);
-		//	sem_post(&get_line_mutex);
 		file >> accountID;
 		file >> password;
 		switch (cmd)
@@ -126,13 +123,11 @@ void* print_bank_func(void* prog_running_flag)
 }
 
 int main(int argc, char *argv[]) {
-	//initilizing log file
 	Log_file.open("log.txt");
-	//initilizing log file mutex
 	sem_init(&log_file_mutex, 0, 1);
 	sem_init(&com_flag_mutex, 0, 1);
 	sem_init(&print_flag_mutex, 0, 1);
-	//sem_init(&get_line_mutex,0,1);
+	
 	/*Arguments Checks:*/
 	if (argc <= 2) //at least 3 args needed (prog, ATM num, and at list 1 atm file)
 	{
