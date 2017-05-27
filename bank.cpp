@@ -150,8 +150,9 @@ bool bank::Password(int account_id, string password)
 //***********************************************
 void bank::Print_Bank() 
 {
+	//readerEnter();
+	sem_wait(&mutex_accountsDB_write);
 	cout << "\033[2J\033[1;1H";
-	readerEnter();
 	cout << "Current Bank Status" << endl;
 	for (map<int, account>::iterator it = accounts_.begin(); it != accounts_.end(); ++it)
 	{
@@ -162,7 +163,8 @@ void bank::Print_Bank()
 	sem_wait(&bank_balance_mutex); //omly one reader to the bank's account so no need in reader-writer locks
 	cout << "The Bank has " << bank_money_ << " $" << endl;
 	sem_post(&bank_balance_mutex);
-	readerLeave();
+	//readerLeave();
+	sem_post(&mutex_accountsDB_write);
 }
 
 //********************************************
