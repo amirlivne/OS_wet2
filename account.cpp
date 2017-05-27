@@ -124,12 +124,10 @@ int account::getID() const {
 int account::updateBalance(int amount) {
 	if (balance_ + amount < 0) //
 	{
-		sem_post(&write_mutex_);
 		return -1;
 	}
 	balance_ += amount;
-	int result = balance_;
-	return result;
+	return balance_;
 }
 
 //********************************************

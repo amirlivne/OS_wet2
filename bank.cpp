@@ -173,8 +173,8 @@ void bank::Print_Bank()
 //***********************************************
 void bank::Open_Account(int account_id, string password, int init_balance, int ATM_ID)
 {
-	ostringstream print_to_log;
 	sem_wait(&mutex_accountsDB_write);
+	ostringstream print_to_log;
 	sleep(1);
 	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
 	{
@@ -343,6 +343,11 @@ void bank::Transfer_Account(int account_id, string password, int account_id_targ
 	{
 		sleep(1);
 		print_to_log << "Error " << ATM_ID << ": Your transaction failed – account id " << account_id_target << " does not exist";
+	}
+	else if (accounts_.find(account_id) == accounts_.find(account_id_target)) //if one tries to tranfer money to himself
+	{
+		readerLeave();
+		return; //do nothing - ignore the cmd
 	}
 	else if (!Password(account_id, password))	// the accounts exist but src the password is incorrect
 	{

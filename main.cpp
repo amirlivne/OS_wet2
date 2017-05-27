@@ -15,6 +15,7 @@ ofstream Log_file;
 sem_t log_file_mutex;
 sem_t com_flag_mutex;
 sem_t print_flag_mutex;
+//sem_t get_line_mutex;
 bank best_bank;
 
 typedef struct ATM_ {
@@ -32,34 +33,31 @@ typedef struct ATM_ {
 void* activateATM(void* patm)
 {
 	pATM curr_ATM = pATM(patm);
-	string sLine;
+	char cmd;
 	ifstream file;
 	file.open(curr_ATM->input_file);
 	int accountID, amount;
 	string password;
-	char cmd;
-	while (!file.eof())
+	while (file >> cmd)
 	{
 		usleep(100000); //sleep for 100,000 micro sec == 100 milisec == 0.1 sec
-		getline(file, sLine);
-		cmd = NULL;
-		istringstream iss(sLine);
-		iss >> cmd;
-		iss >> accountID;
-		iss >> password;
+		//sem_wait(&get_line_mutex);
+		//	sem_post(&get_line_mutex);
+		file >> accountID;
+		file >> password;
 		switch (cmd)
 		{
 		case 'O':
 			int initial_balance;
-			iss >> initial_balance;
+			file >> initial_balance;
 			best_bank.Open_Account(accountID, password, initial_balance, curr_ATM->id);
 			break;
 		case 'D':
-			iss >> amount;
+			file >> amount;
 			best_bank.Deposit_Account(accountID, password, amount, curr_ATM->id);
 			break;
 		case 'W':
-			iss >> amount;
+			file >> amount;
 			best_bank.Withdraw_Account(accountID, password, amount, curr_ATM->id);
 			break;
 		case 'B':
@@ -70,8 +68,8 @@ void* activateATM(void* patm)
 			break;
 		case 'T':
 			int target;
-			iss >> target;
-			iss >> amount;
+			file >> target;
+			file >> amount;
 			best_bank.Transfer_Account(accountID, password, target, amount, curr_ATM->id);
 			break;
 		default: //if the actions is not recognized;
@@ -134,6 +132,7 @@ int main(int argc, char *argv[]) {
 	sem_init(&log_file_mutex, 0, 1);
 	sem_init(&com_flag_mutex, 0, 1);
 	sem_init(&print_flag_mutex, 0, 1);
+	//sem_init(&get_line_mutex,0,1);
 	/*Arguments Checks:*/
 	if (argc <= 2) //at least 3 args needed (prog, ATM num, and at list 1 atm file)
 	{
@@ -156,25 +155,14 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	int rv;
+
 	//initilizing N ATMs
 	pATM ATMs = new ATM[ATM_num];
 	for (int i = 0; i < ATM_num; i++)
 	{
 		ATMs[i].id = i + 1;
 		ATMs[i].input_file = argv[i + 2];
-	}
-
-	//initilize N threads variables
-	pthread_t* ATM_threads = new pthread_t[ATM_num];
-	int rv;
-	for (int i = 0; i < ATM_num; i++)
-	{
-		//activating the N ATMs
-		rv = pthread_create(&ATM_threads[i], NULL, activateATM, (void*)&ATMs[i]);
-		if (rv)
-		{
-			cout << "Error <" << i + 1 << ">: error in creating ATM thread" << endl;
-		}
 	}
 
 	//initilizing commission thread;
@@ -193,6 +181,18 @@ int main(int argc, char *argv[]) {
 	if (rv)
 	{
 		cout << "Error in creating Print Bank thread" << endl;
+	}
+
+	//initilize N threads variables
+	pthread_t* ATM_threads = new pthread_t[ATM_num];
+
+	for (int i = 0; i < ATM_num; i++) //activating the N ATMs
+	{
+		rv = pthread_create(&ATM_threads[i], NULL, activateATM, (void*)&ATMs[i]);
+		if (rv)
+		{
+			cout << "Error <" << i + 1 << ">: error in creating ATM thread" << endl;
+		}
 	}
 
 	//joining ATMs threads
@@ -229,6 +229,7 @@ int main(int argc, char *argv[]) {
 	sem_destroy(&log_file_mutex);
 	sem_destroy(&com_flag_mutex);
 	sem_destroy(&print_flag_mutex);
+	//sem_destroy(&get_line_mutex);
 
 	return 1;
 }
