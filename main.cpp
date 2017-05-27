@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
 	rv = pthread_create(&commission_thread, NULL, commission_func, &ATMs_active_flag);
 	if (rv)
 	{
-		cout << "Error in creating Commision thread" << endl;
+		cerr << "Error in creating Commision thread" << endl;
 	}
 
 	//initilizng print thread;
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
 	rv = pthread_create(&print_bank_thread, NULL, print_bank_func, &prog_running_flag);
 	if (rv)
 	{
-		cout << "Error in creating Print Bank thread" << endl;
+		cerr << "Error in creating Print Bank thread" << endl;
 	}
 
 	//initilize N threads variables
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
 		rv = pthread_create(&ATM_threads[i], NULL, activateATM, (void*)&ATMs[i]);
 		if (rv)
 		{
-			cout << "Error <" << i + 1 << ">: error in creating ATM thread" << endl;
+			cerr << "Error <" << i + 1 << ">: error in creating ATM thread" << endl;
 		}
 	}
 
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
 		rv = pthread_join(ATM_threads[i], NULL);
 		if (rv)
 		{
-			cout << "Error <" << i+1 << ">: error in joining ATM thread" << endl;
+			cerr << "Error <" << i+1 << ">: error in joining ATM thread" << endl;
 		}
 	}
 	//joining commision thread
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
 	rv = pthread_join(commission_thread, NULL);
 	if (rv)
 	{
-		cout << "Error in joining Commision thread" << endl;
+		cerr << "Error in joining Commision thread" << endl;
 	}
 
 	//joining print bank thread
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
 	rv = pthread_join(print_bank_thread, NULL);
 	if (rv)
 	{
-		cout << "Error in joining Print Bank thread" << endl;
+		cerr << "Error in joining Print Bank thread" << endl;
 	}
 
 	//destroying log file mutex and closing the log file

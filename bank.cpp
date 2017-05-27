@@ -302,7 +302,6 @@ void bank::Get_Balance_Account(int account_id, string password, int ATM_ID)
 void bank::Quit_Account(int account_id, string password, int ATM_ID)
 {
 	ostringstream print_to_log;
-	map<int, account>::iterator it = accounts_.find(account_id);
 	sem_wait(&mutex_accountsDB_write); //lock DB to both write and read actions
 	sleep(1);
 	if (accounts_.find(account_id) == accounts_.end())	// the account do not exist
